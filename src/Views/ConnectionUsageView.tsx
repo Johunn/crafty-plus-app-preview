@@ -175,6 +175,7 @@ export const ConnectionUsageView = () => {
   const weeklyCount = createMemo(() =>
     week().reduce((sum, day) => sum + day.count, 0)
   );
+  const weeklyAverage = createMemo(() => weeklyCount() / 7);
   const peak = createMemo(() => Math.max(1, ...week().map((day) => day.count)));
 
   return (
@@ -222,16 +223,19 @@ export const ConnectionUsageView = () => {
         {m.usage_title()}
       </PageTitle>
 
-      <Card class="flex flex-col gap-2 p-4">
-        <div class="flex items-center justify-between gap-3">
-          <div>
-            <h2 class="font-medium text-sm">{m.usage_period()}</h2>
-            <p class="mt-1 text-muted-foreground text-xs">
-              {m.usage_periodHint()}
-            </p>
-          </div>
-          <span class="font-mono text-primary text-sm tabular-nums">
-            {current().length} · {formatGrams(current().length)} g
+      <Card class="flex flex-col gap-3 p-4">
+        <div>
+          <h2 class="font-medium text-sm">{m.usage_period()}</h2>
+          <p class="mt-1 text-muted-foreground text-xs">
+            {m.usage_periodHint()}
+          </p>
+        </div>
+        <div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <span class="font-semibold text-3xl text-primary tabular-nums">
+            {formatGrams(current().length)} g
+          </span>
+          <span class="text-muted-foreground text-xs">
+            {m.usage_summaryConnections({ count: current().length })}
           </span>
         </div>
         <div class="text-muted-foreground text-xs">
@@ -275,6 +279,9 @@ export const ConnectionUsageView = () => {
           </span>
           <span class="text-[11px] text-muted-foreground leading-tight">
             {m.usage_week()}
+          </span>
+          <span class="text-[10px] text-muted-foreground">
+            {m.usage_dailyAverage()}: {formatGrams(weeklyAverage())} g
           </span>
         </Card>
         <Card class="flex flex-col gap-1 p-3.5">

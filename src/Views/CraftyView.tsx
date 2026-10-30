@@ -3,9 +3,12 @@ import ArrowRight from "lucide-solid/icons/arrow-right";
 import ChevronRight from "lucide-solid/icons/chevron-right";
 import Activity from "lucide-solid/icons/activity";
 import MapPin from "lucide-solid/icons/map-pin";
+import Minus from "lucide-solid/icons/minus";
 import History from "lucide-solid/icons/rotate-ccw-clock";
 import SlidersHorizontal from "lucide-solid/icons/sliders-horizontal";
 import Thermometer from "lucide-solid/icons/thermometer";
+import TrendingDown from "lucide-solid/icons/trending-down";
+import TrendingUp from "lucide-solid/icons/trending-up";
 import {
   type Component,
   createEffect,
@@ -100,6 +103,13 @@ const CraftyConsumptionSummary = () => {
       usage.dailyResets()
     );
   });
+  const dailyAverage = createMemo(() => week() / 7);
+  const dailyTrend = createMemo(() => {
+    if (week() === 0) return "empty";
+    if (today() > dailyAverage()) return "above";
+    if (today() < dailyAverage()) return "below";
+    return "equal";
+  });
   const formatGrams = (count: number) =>
     new Intl.NumberFormat(getLocale(), {
       minimumFractionDigits: 2,
@@ -128,16 +138,66 @@ const CraftyConsumptionSummary = () => {
           <span class="text-muted-foreground text-[11px]">
             {m.usage_summaryConnections({ count: today() })}
           </span>
+          <Show when={dailyTrend() !== "empty"}>
+            <span
+              class="mt-0.5 flex w-fit animate-pulse items-center gap-1 rounded-full px-1.5 py-0.5 font-medium text-[9px]"
+              classList={{
+                "bg-red-500/10 text-red-600 dark:text-red-400":
+                  dailyTrend() === "above",
+                "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400":
+                  dailyTrend() === "below",
+                "bg-muted text-muted-foreground": dailyTrend() === "equal",
+              }}
+              aria-label={
+                dailyTrend() === "above"
+                  ? m.usage_trendAbove()
+                  : dailyTrend() === "below"
+                    ? m.usage_trendBelow()
+                    : m.usage_trendEqual()
+              }
+              title={
+                dailyTrend() === "above"
+                  ? m.usage_trendAbove()
+                  : dailyTrend() === "below"
+                    ? m.usage_trendBelow()
+                    : m.usage_trendEqual()
+              }
+            >
+              <Show
+                when={dailyTrend() === "above"}
+                fallback={
+                  <Show
+                    when={dailyTrend() === "below"}
+                    fallback={<Minus class="size-3" />}
+                  >
+                    <TrendingDown class="size-3" />
+                  </Show>
+                }
+              >
+                <TrendingUp class="size-3" />
+              </Show>
+              <span>
+                {dailyTrend() === "above"
+                  ? m.usage_trendAboveShort()
+                  : dailyTrend() === "below"
+                    ? m.usage_trendBelowShort()
+                    : m.usage_trendEqualShort()}
+              </span>
+            </span>
+          </Show>
         </div>
         <div class="flex flex-col gap-0.5">
           <span class="text-muted-foreground text-[11px]">
-            {m.usage_summaryWeek()}
+            {m.usage_summaryWeekTotal()}
           </span>
           <span class="font-semibold text-lg tabular-nums">
             {formatGrams(week())} <span class="font-normal text-sm">g</span>
           </span>
           <span class="text-muted-foreground text-[11px]">
             {m.usage_summaryConnections({ count: week() })}
+          </span>
+          <span class="text-muted-foreground text-[10px]">
+            {m.usage_dailyAverage()}: {formatGrams(dailyAverage())} g
           </span>
         </div>
       </div>

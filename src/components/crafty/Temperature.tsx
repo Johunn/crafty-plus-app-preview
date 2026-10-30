@@ -1,4 +1,5 @@
 import Power from "lucide-solid/icons/power";
+import Thermometer from "lucide-solid/icons/thermometer";
 import TriangleAlert from "lucide-solid/icons/triangle-alert";
 import { Show } from "solid-js";
 import { Limits } from "../../devices/crafty/protocol";
@@ -55,7 +56,10 @@ export const Temperature = () => {
         canDecrease={state.targetTemp > Limits.MIN_TEMP}
         canIncrease={state.targetTemp < Limits.MAX_TEMP}
       >
-        <TemperatureDisplay value={displayTemp(state.targetTemp)} unit={unit()} />
+        <TemperatureDisplay
+          value={displayTemp(state.targetTemp)}
+          unit={unit()}
+        />
       </TargetStepper>
 
       <div class="grid grid-cols-2 gap-3">
@@ -81,6 +85,7 @@ export const Temperature = () => {
         <OffsetStepper
           label={m.crafty_boostPower()}
           value={`+${displayOffset(state.boostTemp)}°`}
+          icon={Thermometer}
           onDecrease={() => actions.setBoostTemp(state.boostTemp - 1)}
           onIncrease={() => actions.setBoostTemp(state.boostTemp + 1)}
         />

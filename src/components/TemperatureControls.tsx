@@ -1,5 +1,6 @@
 import Minus from "lucide-solid/icons/minus";
 import Plus from "lucide-solid/icons/plus";
+import Thermometer from "lucide-solid/icons/thermometer";
 import { type Component, type JSX, Show } from "solid-js";
 import { cn } from "../lib/utils";
 import { m } from "../paraglide/messages";
@@ -49,43 +50,62 @@ interface OffsetStepperProps {
   label: string;
   /** The offset as shown, e.g. "+10°" */
   value: string;
+  icon?: Component<{ class?: string }>;
   onIncrease: () => void;
   onDecrease: () => void;
   active?: boolean;
 }
 
-/** Small card for a boost offset */
-export const OffsetStepper = (props: OffsetStepperProps) => (
-  <Card
-    class={cn(
-      "flex min-w-0 flex-col gap-2.5 p-2.5 transition-colors",
-      props.active && "border-primary/50 bg-primary-soft"
-    )}
-  >
-    <span class="text-center text-muted-foreground text-xs">{props.label}</span>
-    <div class="grid grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-1">
-      <RepeatButton
-        size="icon-sm"
-        class="size-8 justify-self-center"
-        onStep={props.onDecrease}
-        aria-label={m.temperature_decreaseOffset({ name: props.label })}
-      >
-        <Minus />
-      </RepeatButton>
-      <span class="min-w-0 whitespace-nowrap text-center font-semibold text-sm tabular-nums">
-        {props.value}
-      </span>
-      <RepeatButton
-        size="icon-sm"
-        class="size-8 justify-self-center"
-        onStep={props.onIncrease}
-        aria-label={m.temperature_increaseOffset({ name: props.label })}
-      >
-        <Plus />
-      </RepeatButton>
-    </div>
-  </Card>
-);
+/** Matching card for a boost offset with a compact, centered stepper */
+export const OffsetStepper = (props: OffsetStepperProps) => {
+  const Icon = props.icon ?? Thermometer;
+
+  return (
+    <Card
+      class={cn(
+        "flex h-full min-w-0 flex-col justify-between gap-3 p-3.5 transition-colors",
+        props.active && "border-primary/50 bg-primary-soft"
+      )}
+    >
+      <div class="flex min-w-0 items-center gap-2">
+        <span
+          class={cn(
+            "flex size-9 shrink-0 items-center justify-center rounded-xl transition-colors",
+            props.active
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-muted-foreground"
+          )}
+        >
+          <Icon class="size-[18px]" />
+        </span>
+        <span class="min-w-0 font-semibold text-sm leading-tight">
+          {props.label}
+        </span>
+      </div>
+      <div class="flex min-w-0 items-center justify-between gap-1 rounded-xl bg-muted/50 p-1">
+        <RepeatButton
+          size="icon-sm"
+          class="size-8 shrink-0 rounded-lg"
+          onStep={props.onDecrease}
+          aria-label={m.temperature_decreaseOffset({ name: props.label })}
+        >
+          <Minus />
+        </RepeatButton>
+        <span class="min-w-0 flex-1 whitespace-nowrap text-center font-semibold text-xl text-primary tabular-nums">
+          {props.value}
+        </span>
+        <RepeatButton
+          size="icon-sm"
+          class="size-8 shrink-0 rounded-lg"
+          onStep={props.onIncrease}
+          aria-label={m.temperature_increaseOffset({ name: props.label })}
+        >
+          <Plus />
+        </RepeatButton>
+      </div>
+    </Card>
+  );
+};
 
 interface ToggleTileProps {
   label: string;
@@ -104,22 +124,22 @@ export const ToggleTile = (props: ToggleTileProps) => (
     disabled={props.disabled}
     onClick={() => props.onToggle()}
     class={cn(
-      "flex touch-manipulation flex-col gap-3.5 rounded-card border bg-card p-4 text-left transition-[background-color,border-color,box-shadow,transform] focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 active:scale-[0.98] disabled:opacity-50",
+      "flex h-full min-h-[116px] touch-manipulation flex-col justify-between gap-3 rounded-card border bg-card p-3.5 text-left transition-[background-color,border-color,box-shadow,transform] focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 active:scale-[0.98] disabled:opacity-50",
       props.pressed
         ? "border-primary bg-primary-soft shadow-[0_0_0_1px_var(--primary)] fx:shadow-[0_0_0_1px_var(--primary),0_10px_30px_-12px_var(--glow)] fx-strong:shadow-[0_0_0_1px_var(--primary),0_14px_48px_-10px_var(--glow)]"
         : "hover:bg-accent"
     )}
   >
-    <span class="flex w-full items-center justify-between">
+    <span class="flex w-full items-center justify-between gap-2">
       <span
         class={cn(
-          "flex size-10 items-center justify-center rounded-xl transition-colors",
+          "flex size-9 shrink-0 items-center justify-center rounded-xl transition-colors",
           props.pressed
             ? "bg-primary text-primary-foreground"
             : "bg-muted text-muted-foreground"
         )}
       >
-        <props.icon class="size-5" />
+        <props.icon class="size-[18px]" />
       </span>
       <span
         aria-hidden="true"
@@ -136,9 +156,17 @@ export const ToggleTile = (props: ToggleTileProps) => (
         />
       </span>
     </span>
-    <span class="flex flex-col gap-0.5">
-      <span class="font-semibold text-[15px]">{props.label}</span>
-      <span class="text-muted-foreground text-xs">{props.status}</span>
+    <span class="flex min-w-0 flex-col gap-1">
+      <span class="truncate font-semibold text-sm">{props.label}</span>
+      <span class="flex items-center gap-1.5 text-muted-foreground text-xs">
+        <span
+          class={cn(
+            "size-1.5 rounded-full",
+            props.pressed ? "bg-primary" : "bg-muted-foreground/60"
+          )}
+        />
+        {props.status}
+      </span>
     </span>
   </button>
 );
