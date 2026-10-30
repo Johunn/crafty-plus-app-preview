@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" href="%BASE_URL%favicon.ico" sizes="48x48" />
+    <link rel="icon" href="%BASE_URL%favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="%BASE_URL%apple-touch-icon.png" />
+    <meta name="theme-color" content="#09090b" />
+    <meta
+      name="description"
+      content="Contrôle Bluetooth et suivi local du CRAFTY+"
+    />
+    <meta name="apple-mobile-web-app-title" content="CRAFTY+ Suivi" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>CRAFTY+ · Contrôle et suivi</title>
+    <script>
+      // Apply the stored theme before the first paint to avoid a flash
+      (() => {
+        try {
+          const stored = localStorage.getItem("isDarkModeVReverse");
+          const dark =
+            stored === null
+              ? matchMedia("(prefers-color-scheme: dark)").matches
+              : stored === "true";
+          document.documentElement.classList.toggle("dark", dark);
+          document
+            .querySelector('meta[name="theme-color"]')
+            .setAttribute("content", dark ? "#09090b" : "#fafafa");
+          const effects = localStorage.getItem("effects");
+          document.documentElement.dataset.effects =
+            effects === "off" || effects === "strong" ? effects : "subtle";
+        } catch {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/index.tsx"></script>
+  </body>
+</html>

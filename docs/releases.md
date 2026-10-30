@@ -1,0 +1,117 @@
+# Releases & deployment
+
+The app is delivered two ways: the hosted web app on GitHub Pages, updated on every push to `main`, and
+versioned Docker images on Docker Hub, published from tags. The documentation website is published
+next to the app on GitHub Pages.
+
+## Contents
+
+- [GitHub Pages](#github-pages)
+- [Versioning](#versioning)
+- [Cutting a release](#cutting-a-release)
+- [What the release workflow does](#what-the-release-workflow-does)
+- [Edge images](#edge-images)
+- [Required secrets](#required-secrets)
+- [Checklist](#checklist)
+
+## GitHub Pages
+
+| | |
+|---|---|
+| URL | https://firsttris.github.io/reactive-volcano-app/ |
+| Workflow | [`.github/workflows/build.yml`](../.github/workflows/build.yml) |
+| Trigger | push to `main` (except changes to the README files, `CONTRIBUTING.md` or `LICENSE` only), or by hand; pull requests run the checks without deploying |
+| Build | `npm run build` with base `/reactive-volcano-app/` |
+| SPA fallback | `dist/index.html` is copied to `dist/404.html`, so deep links survive a reload |
+| Documentation | https://firsttris.github.io/reactive-volcano-app/docs/, built from `docs/` with [MkDocs Material](https://squidfunk.github.io/mkdocs-material/) (`mkdocs.yml`) and copied to `dist/docs/` before the deployment |
+
+Unit and end-to-end tests and the documentation build must pass before the deployment runs
+([Continuous integration](testing.md#continuous-integration)). Users receive the new version through the
+service worker the next time they open the app. The service worker leaves `/docs/` alone
+(`navigateFallbackDenylist` in `vite.config.ts`), so the documentation is served as it is, not as the app.
+
+The documentation website needs no setup beyond the Pages source *GitHub Actions*, which the app
+already uses. Links from `docs/` to files outside it, such as `../README.md`, are turned into links to
+GitHub while the site is built (`docs/hooks/repo_links.py`), so the Markdown works on GitHub and on the
+website alike.
+
+## Versioning
+
+The version in `package.json` follows [Semantic Versioning](https://semver.org/):
+
+- **patch**: fixes, translations, documentation-visible tweaks,
+- **minor**: new features or device support,
+- **major**: changes that break something for users, for example dropping a device or changing the
+  workflow file format.
+
+## Cutting a release
+
+Either way creates the tag `vX.Y.Z`:
+
+- without a checkout: *Actions → Bump version → Run workflow* with patch, minor or major
+  ([`bump.yml`](../.github/workflows/bump.yml), the shared
+  [`bump-version`](https://github.com/firsttris/workflows#bump-version)). It raises the version, commits it
+  as `Release vX.Y.Z` on `main`, tags it and starts the release workflow on the tag.
+- on a checkout:
+
+```bash
+git checkout main && git pull
+npm run release:minor     # or release:patch / release:major
+```
+
+`npm version` bumps `package.json` and `package-lock.json`, commits, creates the tag `vX.Y.Z`, and
+the `postversion` script pushes the commit and the tag.
+
+## What the release workflow does
+
+[`.github/workflows/release.yml`](../.github/workflows/release.yml) runs on tags `v*`, first the checks
+from [`build.yml`](../.github/workflows/build.yml) (lint, unit and E2E tests, build), then the shared
+[`docker-release`](https://github.com/firsttris/workflows) workflow:
+
+```mermaid
+flowchart LR
+  T["tag vX.Y.Z"] --> C{"tag matches<br/>package.json?"}
+  C -- no --> F["fail"]
+  C -- yes --> B["build image<br/>linux/amd64 + linux/arm64"]
+  B --> P["push :X.Y.Z, :X.Y, :latest"]
+  P --> H["update Docker Hub description<br/>from README.md"]
+  H --> R["create GitHub release"]
+```
+
+- The checks are skipped when `main`'s `build.yml` already passed for the code: a release commit from
+  *Bump version* (or `npm version`) only changes the version, so the green run of the commit before it
+  counts ([`tested-on-main`](https://github.com/firsttris/workflows#tested-on-main)). Anything else runs
+  them first.
+- The image is built from the [`Dockerfile`](../Dockerfile) (`npm ci`, `npm run build:root`, nginx).
+- The Docker Hub description is taken from `README.md` with relative links made absolute, so the README
+  and its images render there too. The short description is set in `release.yml` (max. 100 characters).
+
+## Edge images
+
+Running the release workflow by hand on `main` (*Actions → Release → Run workflow*) publishes the image
+as `:edge` without creating a release. Use it to test a container build before tagging.
+
+## Required secrets
+
+Set in the repository or organization settings, used by the shared workflow:
+
+| Secret | Purpose |
+|---|---|
+| `DOCKER_PAT` | Docker Hub access token with write access for the user `tristanteu` (passed through `secrets: inherit`) |
+
+The GitHub release uses the workflow's own `GITHUB_TOKEN` (`contents: write`). GitHub Pages must be set to
+*GitHub Actions* as the source under *Settings → Pages*.
+
+## Checklist
+
+Before tagging:
+
+- [ ] `npm run typecheck && npm run lint && npm test && npm run test:e2e` pass
+- [ ] tested on at least one real device per changed family ([checklist](testing.md#testing-on-a-real-device))
+- [ ] screenshots updated if the UI changed (`npm run screenshots`)
+- [ ] README feature table and docs updated
+- [ ] both translations complete (the i18n test enforces this)
+
+---
+
+Next: [Self-hosting](self-hosting.md) · [Development](development.md) · [Documentation index](README.md)
