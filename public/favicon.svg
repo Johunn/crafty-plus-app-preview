@@ -2,56 +2,77 @@
   <title>CRAFTY+ App</title>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#1f1f23"/>
+      <stop offset="0" stop-color="#222226"/>
       <stop offset="1" stop-color="#09090b"/>
     </linearGradient>
-    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="#f97316" stop-opacity="0.38"/>
-      <stop offset="0.6" stop-color="#f97316" stop-opacity="0.08"/>
+    <radialGradient id="glow" cx="0.5" cy="0.58" r="0.55">
+      <stop offset="0" stop-color="#f97316" stop-opacity="0.28"/>
       <stop offset="1" stop-color="#f97316" stop-opacity="0"/>
     </radialGradient>
     <linearGradient id="arc" x1="0" y1="1" x2="1" y2="0">
       <stop offset="0" stop-color="#fbbf24"/>
       <stop offset="1" stop-color="#f97316"/>
     </linearGradient>
-    <linearGradient id="device" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#42454a"/>
-      <stop offset="0.48" stop-color="#202226"/>
-      <stop offset="1" stop-color="#111215"/>
+    <linearGradient id="mouthpiece" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#8b8b87"/>
+      <stop offset="0.55" stop-color="#ddd6ca"/>
+      <stop offset="1" stop-color="#777873"/>
     </linearGradient>
-    <linearGradient id="cap" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#55585c"/>
-      <stop offset="1" stop-color="#25272a"/>
+    <linearGradient id="body" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#151619"/>
+      <stop offset="0.48" stop-color="#292a2c"/>
+      <stop offset="1" stop-color="#111214"/>
     </linearGradient>
+    <linearGradient id="base" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#292522"/>
+      <stop offset="1" stop-color="#111113"/>
+    </linearGradient>
+    <clipPath id="fins">
+      <path d="M177 177q0-15 16-17h126q16 2 16 17v207q-5 14-20 17H197q-15-3-20-17z"/>
+    </clipPath>
   </defs>
-  <rect id="background" width="512" height="512" rx="112" fill="url(#bg)"/>
-  <circle cx="256" cy="268" r="190" fill="url(#glow)"/>
-  <!-- Temperature arc echoes the original app icon -->
-  <circle cx="256" cy="268" r="148" fill="none" stroke="#2a2a2f" stroke-width="30"
-    stroke-linecap="round" stroke-dasharray="697.4 929.9" transform="rotate(135 256 268)"/>
-  <circle cx="256" cy="268" r="148" fill="none" stroke="url(#arc)" stroke-width="30"
-    stroke-linecap="round" stroke-dasharray="523 929.9" transform="rotate(135 256 268)"/>
-  <!-- Simplified upright silhouette of the compact CRAFTY+ portable device -->
-  <path d="M207 184v-18q0-15 15-15h68q15 0 15 15v18h16q13 0 15 14l12 151q2 20-17 27-36 14-75 14t-75-14q-19-7-17-27l12-151q2-14 15-14z"
-    fill="url(#device)" stroke="#66696d" stroke-width="5" stroke-linejoin="round"/>
-  <path d="M207 181q0-13 14-13h70q14 0 14 13v15H207z" fill="url(#cap)" stroke="#77797c" stroke-width="4"/>
-  <path d="M220 175h72" stroke="#96989b" stroke-width="4" stroke-linecap="round" opacity="0.65"/>
-  <!-- Molded side ribs -->
-  <g fill="none" stroke="#686b6f" stroke-width="4" stroke-linecap="round" opacity="0.72">
-    <path d="M191 218l-9 116"/>
-    <path d="M201 216l-8 122"/>
-    <path d="M321 216l8 122"/>
-    <path d="M331 218l9 116"/>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <circle cx="256" cy="276" r="207" fill="url(#glow)"/>
+  <!-- Orange temperature arc carried over from the app's original visual style -->
+  <circle cx="256" cy="270" r="183" fill="none" stroke="#343237" stroke-width="18"
+    stroke-linecap="round" stroke-dasharray="862 1150" transform="rotate(135 256 270)"/>
+  <circle cx="256" cy="270" r="183" fill="none" stroke="url(#arc)" stroke-width="18"
+    stroke-linecap="round" stroke-dasharray="405 1150" transform="rotate(138 256 270)"/>
+
+  <!-- Compact angled mouthpiece and its hinged cooling unit -->
+  <path d="M291 151l61-75q5-6 11-1l8 7q5 4 1 10l-62 77z"
+    fill="url(#mouthpiece)" stroke="#5c5d5b" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M347 80l18-22q4-5 9-1l8 7q4 4 0 9l-17 21z"
+    fill="#bbb7af" stroke="#666761" stroke-width="3"/>
+  <path d="M289 152l25 21-14 18-26-22z" fill="#242528" stroke="#777875" stroke-width="4"/>
+  <path d="M216 148q2-19 20-25l38-2q18 5 22 24l12 38H194z"
+    fill="#202124" stroke="#5d5e60" stroke-width="5" stroke-linejoin="round"/>
+  <!-- Ribbed cooling cap -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M190 151q4-19 20-24l54-5q22 4 28 21M184 160q7-18 23-20l65-3q18 4 27 18M179 171q9-14 27-15l73-1q17 2 24 14"
+      stroke="#77797a" stroke-width="7"/>
+    <path d="M190 151q4-19 20-24l54-5q22 4 28 21M184 160q7-18 23-20l65-3q18 4 27 18M179 171q9-14 27-15l73-1q17 2 24 14"
+      stroke="#151618" stroke-width="3" transform="translate(0 4)"/>
   </g>
-  <path d="M216 211q40-12 80 0v139q-40 13-80 0z" fill="#16181b" opacity="0.78"/>
-  <!-- Single-button control and temperature LEDs -->
-  <g fill="#fbbf24">
-    <circle cx="256" cy="250" r="5"/>
-    <circle cx="256" cy="268" r="5"/>
-    <circle cx="256" cy="286" r="5"/>
+  <path d="M230 133h45v12h-45z" fill="#17181a"/>
+  <path d="M237 136h33" stroke="#77797b" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Tall cylindrical body with the distinctive horizontal cooling ribs -->
+  <path d="M177 177q0-15 16-17h126q16 2 16 17v207q-5 14-20 17H197q-15-3-20-17z"
+    fill="url(#body)" stroke="#606164" stroke-width="5"/>
+  <g clip-path="url(#fins)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <g stroke="#111214" stroke-width="11">
+      <path d="M159 191q24-12 50-3t51 0 51 0 44-4M158 207q25-11 51-2t51 0 51 0 45-4M158 223q25-11 51-2t51 0 51 0 45-4M158 239q25-11 51-2t51 0 51 0 45-4M158 255q25-11 51-2t51 0 51 0 45-4M158 271q25-11 51-2t51 0 51 0 45-4M158 287q25-11 51-2t51 0 51 0 45-4M158 303q25-11 51-2t51 0 51 0 45-4M158 319q25-11 51-2t51 0 51 0 45-4M158 335q25-11 51-2t51 0 51 0 45-4M158 351q25-11 51-2t51 0 51 0 45-4M158 367q25-11 51-2t51 0 51 0 45-4M158 383q25-11 51-2t51 0 51 0 45-4"/>
+    </g>
+    <g stroke="#55575a" stroke-width="4">
+      <path d="M159 187q24-12 50-3t51 0 51 0 44-4M158 203q25-11 51-2t51 0 51 0 45-4M158 219q25-11 51-2t51 0 51 0 45-4M158 235q25-11 51-2t51 0 51 0 45-4M158 251q25-11 51-2t51 0 51 0 45-4M158 267q25-11 51-2t51 0 51 0 45-4M158 283q25-11 51-2t51 0 51 0 45-4M158 299q25-11 51-2t51 0 51 0 45-4M158 315q25-11 51-2t51 0 51 0 45-4M158 331q25-11 51-2t51 0 51 0 45-4M158 347q25-11 51-2t51 0 51 0 45-4M158 363q25-11 51-2t51 0 51 0 45-4M158 379q25-11 51-2t51 0 51 0 45-4"/>
+    </g>
   </g>
-  <circle cx="256" cy="318" r="18" fill="#20140e" stroke="#f97316" stroke-width="6"/>
-  <path d="M256 307v13m-8 0h16" fill="none" stroke="#fed7aa" stroke-width="4" stroke-linecap="round"/>
-  <text x="256" y="365" text-anchor="middle" fill="#d6d3d1" font-family="Arial, sans-serif"
-    font-size="19" font-weight="700" letter-spacing="1.2">CRAFTY+</text>
+  <!-- Smooth control base: green status light, orange CRAFTY+ mark and side switch -->
+  <path d="M180 374q35 6 76 6t76-6v43q0 15-14 19-27 9-62 9t-62-9q-14-4-14-19z"
+    fill="url(#base)" stroke="#5c5752" stroke-width="4"/>
+  <rect x="191" y="390" width="38" height="12" rx="6" fill="#58d687" stroke="#d0e7d2" stroke-width="3"/>
+  <path d="M333 391q8 4 8 14t-8 14" fill="none" stroke="#f97316" stroke-width="7" stroke-linecap="round"/>
+  <text x="273" y="415" text-anchor="middle" fill="#f8953f" font-family="cursive" font-size="27"
+    font-style="italic" font-weight="700" letter-spacing="-1">Crafty<tspan dx="1" dy="-9" font-size="13">+</tspan></text>
 </svg>
