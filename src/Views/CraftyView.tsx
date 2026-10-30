@@ -14,6 +14,7 @@ import {
   type JSX,
   onCleanup,
   Show,
+  untrack,
 } from "solid-js";
 import { BatteryChip } from "../components/BatteryChip";
 import { ShutdownTime } from "../components/crafty/ShutdownTime";
@@ -27,9 +28,13 @@ import { LiveSessionProvider } from "../provider/LiveSessionProvider";
 import { buildRoute } from "../routes";
 import { ConnectionState } from "../utils/uuids";
 import {
-  countConnectionsBetween,
-  ESTIMATED_GRAMS_PER_CONNECTION,
+  countConsumptionSessionsBetween,
+  ESTIMATED_GRAMS_PER_SESSION,
+  SESSION_COOLING_GRACE_MS,
+  SESSION_MIN_HOT_MS,
+  SESSION_TEMP_THRESHOLD_C,
 } from "../utils/connectionUsage";
+import { isPlausibleTemp } from "../utils/sessionHistory";
 import { getLocale } from "../paraglide/runtime";
 import { alertCraftyBatteryLow } from "../utils/notify";
 
@@ -76,20 +81,30 @@ const CraftyConsumptionSummary = () => {
   const today = createMemo(() => {
     const start = new Date(now());
     start.setHours(0, 0, 0, 0);
-    return countConnectionsBetween(usage.cycles(), start.getTime(), now());
+    return countConsumptionSessionsBetween(
+      usage.sessions(),
+      start.getTime(),
+      now(),
+      usage.dailyResets()
+    );
   });
   const week = createMemo(() => {
     const end = new Date(now());
     end.setHours(0, 0, 0, 0);
     const start = new Date(end);
     start.setDate(start.getDate() - 6);
-    return countConnectionsBetween(usage.cycles(), start.getTime(), now());
+    return countConsumptionSessionsBetween(
+      usage.sessions(),
+      start.getTime(),
+      now(),
+      usage.dailyResets()
+    );
   });
   const formatGrams = (count: number) =>
     new Intl.NumberFormat(getLocale(), {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(count * ESTIMATED_GRAMS_PER_CONNECTION);
+    }).format(count * ESTIMATED_GRAMS_PER_SESSION);
 
   return (
     <A
@@ -141,18 +156,115 @@ const CraftyBattery = () => {
 const CraftyLiveSession = (props: { children: JSX.Element }) => {
   const { state, derived } = useCrafty();
   return (
-    <LiveSessionProvider
-      reading={() => ({
-        current: state.currentTemp,
-        target: state.targetTemp,
-        heating: derived.isHeaterActive(),
-        reached: derived.isHeaterActive() && derived.isSetpointReached(),
-        ready: state.loaded,
-      })}
-    >
-      {props.children}
-    </LiveSessionProvider>
+    <>
+      <CraftyConsumptionTracker />
+      <LiveSessionProvider
+        reading={() => ({
+          current: state.currentTemp,
+          target: state.targetTemp,
+          heating: derived.isHeaterActive(),
+          reached: derived.isHeaterActive() && derived.isSetpointReached(),
+          ready: state.loaded,
+        })}
+      >
+        {props.children}
+      </LiveSessionProvider>
+    </>
   );
+};
+
+/** Confirms one consumption session after three continuous hot minutes. */
+const CraftyConsumptionTracker = () => {
+  const { state } = useCrafty();
+  const usage = useConnectionUsage();
+  let initialized = false;
+  let candidateStartedAt: number | undefined;
+  let candidateTimer: ReturnType<typeof setTimeout> | undefined;
+  let activeSessionId: string | undefined;
+  let coolingTimer: ReturnType<typeof setTimeout> | undefined;
+
+  createEffect(() => {
+    if (!state.loaded) return;
+    const temperature = state.currentTemp;
+    const hot =
+      isPlausibleTemp(temperature) && temperature > SESSION_TEMP_THRESHOLD_C;
+
+    if (!initialized) {
+      initialized = true;
+      const openSession = untrack(() => usage.openSession());
+      if (openSession && hot) {
+        activeSessionId = openSession.id;
+        usage.touchSession(openSession.id, Date.now());
+        return;
+      }
+      if (openSession) usage.recoverOpenSessions(Date.now());
+    }
+
+    if (hot) {
+      if (coolingTimer !== undefined) {
+        clearTimeout(coolingTimer);
+        coolingTimer = undefined;
+      }
+      if (activeSessionId) {
+        usage.touchSession(activeSessionId, Date.now());
+        return;
+      }
+      if (candidateTimer === undefined) {
+        const startedAt = Date.now();
+        candidateStartedAt = startedAt;
+        candidateTimer = setTimeout(() => {
+          candidateTimer = undefined;
+          if (candidateStartedAt !== startedAt) return;
+          const latestTemperature = untrack(() => state.currentTemp);
+          if (
+            !isPlausibleTemp(latestTemperature) ||
+            latestTemperature <= SESSION_TEMP_THRESHOLD_C
+          ) {
+            candidateStartedAt = undefined;
+            return;
+          }
+          const qualifiedAt = Date.now();
+          activeSessionId = usage.startSession(
+            "CRAFTY+",
+            startedAt,
+            qualifiedAt
+          );
+          usage.touchSession(activeSessionId, qualifiedAt);
+        }, SESSION_MIN_HOT_MS);
+      }
+      return;
+    }
+
+    if (candidateTimer !== undefined) {
+      clearTimeout(candidateTimer);
+      candidateTimer = undefined;
+      candidateStartedAt = undefined;
+    }
+    if (activeSessionId && coolingTimer === undefined) {
+      const sessionId = activeSessionId;
+      const belowThresholdAt = Date.now();
+      coolingTimer = setTimeout(() => {
+        coolingTimer = undefined;
+        const latestTemperature = untrack(() => state.currentTemp);
+        if (
+          !isPlausibleTemp(latestTemperature) ||
+          latestTemperature <= SESSION_TEMP_THRESHOLD_C
+        ) {
+          usage.endSession(sessionId, belowThresholdAt);
+          activeSessionId = undefined;
+        }
+      }, SESSION_COOLING_GRACE_MS);
+    }
+  });
+
+  onCleanup(() => {
+    if (candidateTimer !== undefined) clearTimeout(candidateTimer);
+    if (coolingTimer !== undefined) clearTimeout(coolingTimer);
+    if (activeSessionId) usage.endSession(activeSessionId, Date.now());
+    else usage.recoverOpenSessions(Date.now());
+  });
+
+  return null;
 };
 
 /** Wrapper for all Crafty routes: device store, header and tabs */
