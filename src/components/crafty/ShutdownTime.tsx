@@ -6,7 +6,7 @@ import { formatDuration } from "../../utils/heatProgress";
 import { StatusNote } from "../TemperatureControls";
 
 /**
- * Once the target temperature is reached, the Crafty+ counts down to its automatic shutdown.
+ * Shows the Crafty+ automatic shutdown countdown while it is active.
  */
 export const ShutdownTime = () => {
   const { state, derived, isOldFirmware } = useCrafty();
@@ -14,8 +14,8 @@ export const ShutdownTime = () => {
   const isVisible = () =>
     !isOldFirmware &&
     derived.isHeaterActive() &&
-    derived.isSetpointReached() &&
-    state.autoOffRemaining !== null;
+    state.autoOffRemaining !== null &&
+    state.autoOffRemaining > 0;
 
   return (
     <Show when={isVisible()}>

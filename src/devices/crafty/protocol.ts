@@ -200,7 +200,7 @@ export const analyzeCrafty = (input: CraftyAnalysisInput): AnalysisResult => {
   if (hasBit(register2, StatusRegister2Bit.DISABLE_CHARGE_LED)) {
     findings.push("analysis_finding_ledDisabled");
   }
-  if (hasBit(register2, StatusRegister2Bit.ENABLE_AUTO_BLE_SHUTDOWN)) {
+  if (!hasBit(register2, StatusRegister2Bit.ENABLE_AUTO_BLE_SHUTDOWN)) {
     findings.push("analysis_finding_bluetoothAlwaysOn");
   }
   if (

@@ -97,7 +97,7 @@ describe("Crafty protocol", () => {
 describe("Crafty analysis", () => {
   const healthy: CraftyAnalysisInput = {
     projectRegister: 0x10,
-    statusRegister2: 0x04,
+    statusRegister2: 0x1004,
     akkuStatus: 0,
     akkuStatus2: 0,
     systemStatus: 0,
@@ -130,7 +130,7 @@ describe("Crafty analysis", () => {
     const result = analyzeCrafty({
       ...healthy,
       akkuStatus: 0x4000 | 0x0001,
-      statusRegister2: 0x1000 | 0x02 | 0x01,
+      statusRegister2: 0x02 | 0x01,
       projectRegister: 0x8000,
       ledBrightness: 5,
     });

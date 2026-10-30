@@ -160,10 +160,10 @@ export const createCraftyStore = (
       );
     },
     setPermanentBluetooth(enabled: boolean) {
-      // "Permanent Bluetooth" maps directly to this bit
+      // A set bit enables automatic BLE shutdown; clear it to keep BLE on.
       return setStatusRegister2Bit(
         StatusRegister2Bit.ENABLE_AUTO_BLE_SHUTDOWN,
-        enabled,
+        !enabled,
         "permanent bluetooth"
       );
     },
@@ -200,7 +200,6 @@ export const createCraftyStore = (
       hasBit(state.projectRegister, ProjectRegisterBit.SUPERBOOST_MODE),
     effectiveTargetTemp: () => {
       const baseTemperature = state.targetTemp;
-      if (!isHeaterActive(state.projectRegister)) return baseTemperature;
       if (hasBit(state.projectRegister, ProjectRegisterBit.SUPERBOOST_MODE)) {
         return clamp(
           baseTemperature + state.boostTemp + 15,
@@ -223,7 +222,7 @@ export const createCraftyStore = (
     isChargeLedOn: () =>
       !hasBit(state.statusRegister2, StatusRegister2Bit.DISABLE_CHARGE_LED),
     isPermanentBluetooth: () =>
-      hasBit(
+      !hasBit(
         state.statusRegister2,
         StatusRegister2Bit.ENABLE_AUTO_BLE_SHUTDOWN
       ),
