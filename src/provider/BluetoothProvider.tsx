@@ -13,6 +13,10 @@ import {
 } from "../devices/ventyVeazy/driver";
 import { connectVolcano, type VolcanoDriver } from "../devices/volcano/driver";
 import {
+  isNativeAndroidBluetooth,
+  NATIVE_RECONNECTED_EVENT,
+} from "../utils/androidBluetooth";
+import {
   connectGatt,
   hasUserActivation,
   sleep,
@@ -162,7 +166,8 @@ const createBluetoothMethods = (usage: ConnectionUsageRecorder) => {
   const usageHeartbeat = setInterval(() => {
     if (
       connectionState() === ConnectionState.CONNECTED &&
-      deviceInfo().type === DeviceType.CRAFTY
+      deviceInfo().type === DeviceType.CRAFTY &&
+      !isNativeAndroidBluetooth()
     ) {
       usage.touch(Date.now());
     }
@@ -228,16 +233,20 @@ const createBluetoothMethods = (usage: ConnectionUsageRecorder) => {
     await Promise.all(drivers.map((driver) => driver?.dispose()));
   };
 
-  const releaseDevice = () => {
+  const releaseDevice = (disconnectNative = true) => {
     const currentDevice = device();
     if (currentDevice) {
-      if (deviceInfo().type === DeviceType.CRAFTY) usage.end(Date.now());
+      if (
+        deviceInfo().type === DeviceType.CRAFTY &&
+        !isNativeAndroidBluetooth()
+      )
+        usage.end(Date.now());
       currentDevice.removeEventListener(
         "gattserverdisconnected",
         handleDisconnect
       );
       // Also ends a gatt.connect() that is still pending
-      currentDevice.gatt?.disconnect();
+      if (disconnectNative) currentDevice.gatt?.disconnect();
     }
     setDevice(undefined);
     setDeviceInfo(NO_DEVICE);
@@ -247,7 +256,24 @@ const createBluetoothMethods = (usage: ConnectionUsageRecorder) => {
     console.log("🔌 Device disconnected unexpectedly:", event);
     // A drop while connecting is handled by the connect attempt itself
     if (connectionState() !== ConnectionState.CONNECTED) return;
-    if (deviceInfo().type === DeviceType.CRAFTY) usage.end(Date.now());
+    if (isNativeAndroidBluetooth()) {
+      const reason = (event as CustomEvent<{ reason?: string }>).detail?.reason;
+      if (reason === "stopped") {
+        void disposeDrivers();
+        releaseDevice(false);
+        setConnectionState(ConnectionState.NOT_CONNECTED);
+        setConnectionError(undefined);
+      } else {
+        void disposeDrivers();
+        setReconnectAttempt(1);
+        setReconnectTotal(1);
+        setConnectionError({ kind: "lost" });
+        setConnectionState(ConnectionState.RECONNECTING);
+      }
+      return;
+    }
+    if (deviceInfo().type === DeviceType.CRAFTY && !isNativeAndroidBluetooth())
+      usage.end(Date.now());
     const lostDevice = device();
     disposeDrivers();
     if (lostDevice) {
@@ -326,7 +352,8 @@ const createBluetoothMethods = (usage: ConnectionUsageRecorder) => {
     const oldDevice = device();
     if (
       oldDevice?.gatt?.connected &&
-      deviceInfo().type === DeviceType.CRAFTY
+      deviceInfo().type === DeviceType.CRAFTY &&
+      !isNativeAndroidBluetooth()
     ) {
       usage.end(Date.now());
     }
@@ -425,10 +452,45 @@ const createBluetoothMethods = (usage: ConnectionUsageRecorder) => {
       "gattserverdisconnected",
       handleDisconnect
     );
-    if (type === DeviceType.CRAFTY) {
+    if (type === DeviceType.CRAFTY && !isNativeAndroidBluetooth()) {
       usage.start(name || "CRAFTY+", connectedAt);
     }
   };
+
+  const reconnectAfterNativeLink = () => {
+    const currentDevice = device();
+    if (
+      !isNativeAndroidBluetooth() ||
+      !currentDevice ||
+      connectionState() !== ConnectionState.RECONNECTING
+    ) {
+      return;
+    }
+    const { token } = startAttempt();
+    setConnectionError(undefined);
+    void connectToDevice(currentDevice, token)
+      .then(() => {
+        if (token !== reconnectToken) return;
+        setReconnectAttempt(0);
+        setConnectionState(ConnectionState.CONNECTED);
+      })
+      .catch((error) => {
+        if (token !== reconnectToken) return;
+        console.warn(
+          "Reattaching the foreground UI to native BLE failed:",
+          error
+        );
+        // The Android service continues its own reconnect attempts.
+        setConnectionState(ConnectionState.RECONNECTING);
+      });
+  };
+  window.addEventListener(NATIVE_RECONNECTED_EVENT, reconnectAfterNativeLink);
+  onCleanup(() =>
+    window.removeEventListener(
+      NATIVE_RECONNECTED_EVENT,
+      reconnectAfterNativeLink
+    )
+  );
 
   /**
    * Called by a device store whose first reads failed: without them the

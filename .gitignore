@@ -11,6 +11,9 @@ node_modules
 dist
 dist-ssr
 *.local
+.gradle/
+local.properties
+**/build/
 
 # Editor directories and files
 .vscode/*

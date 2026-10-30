@@ -1,17 +1,28 @@
-import { type Accessor, createContext, type JSX, useContext } from "solid-js";
+import {
+  type Accessor,
+  createContext,
+  type JSX,
+  onCleanup,
+  onMount,
+  useContext,
+} from "solid-js";
 import { useIndexedDB } from "../hooks/utils/useIndexedDB";
 import {
-  closeOpenConsumptionSessions,
-  dailyConsumptionReset,
-  endLatestConnectionCycle,
-  endConsumptionSession,
+  getNativeBackgroundSnapshot,
+  NATIVE_RESUME_EVENT,
+} from "../utils/androidBluetooth";
+import {
   type ConnectionCycle,
   type ConsumptionSession,
+  closeOpenConsumptionSessions,
   type DailyConsumptionResets,
+  dailyConsumptionReset,
+  endConsumptionSession,
+  endLatestConnectionCycle,
   startConnectionCycle,
   startConsumptionSession,
-  touchLatestConnectionCycle,
   touchConsumptionSession,
+  touchLatestConnectionCycle,
 } from "../utils/connectionUsage";
 
 interface ConnectionUsageContextValue {
@@ -48,6 +59,22 @@ export const ConnectionUsageProvider = (props: { children: JSX.Element }) => {
     DAILY_RESET_STORAGE_KEY,
     {}
   );
+  const syncBackgroundRecords = async () => {
+    try {
+      const snapshot = await getNativeBackgroundSnapshot();
+      setCycles((previous) => mergeById(previous, snapshot.cycles));
+      setSessions((previous) => mergeById(previous, snapshot.sessions));
+    } catch (error) {
+      console.warn("Could not sync Android background records:", error);
+    }
+  };
+  onMount(() => {
+    void syncBackgroundRecords();
+    window.addEventListener(NATIVE_RESUME_EVENT, syncBackgroundRecords);
+    onCleanup(() =>
+      window.removeEventListener(NATIVE_RESUME_EVENT, syncBackgroundRecords)
+    );
+  });
   const touch = (at = Date.now()) =>
     setCycles((previous) => touchLatestConnectionCycle(previous, at));
   return (
@@ -97,4 +124,14 @@ export const useConnectionUsage = () => {
     throw new Error("useConnectionUsage must be used within its provider");
   }
   return context;
+};
+
+const mergeById = <T extends { id: string }>(existing: T[], incoming: T[]) => {
+  const records = new Map(existing.map((record) => [record.id, record]));
+  for (const record of incoming) records.set(record.id, record);
+  return [...records.values()].sort((a, b) => {
+    const aTime = "startedAt" in a ? Number(a.startedAt) : 0;
+    const bTime = "startedAt" in b ? Number(b.startedAt) : 0;
+    return aTime - bTime;
+  });
 };

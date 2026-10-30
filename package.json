@@ -12,6 +12,7 @@
     "lint:fix": "biome check --write .",
     "build": "npm run typecheck && vite build --base=/crafty-plus-app-preview/",
     "build:root": "npm run typecheck && vite build",
+    "build:android:web": "npm run typecheck && vite build --mode android --base=/assets/www/",
     "preview": "vite preview",
     "icons": "node scripts/icons/generate.mjs",
     "social-preview": "node scripts/social-preview/render.mjs",

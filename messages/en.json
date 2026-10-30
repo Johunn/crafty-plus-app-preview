@@ -288,5 +288,16 @@
   "settings_manuals": "Manuals and downloads",
   "settings_warranty": "Warranty terms",
   "settings_craftySupport": "CRAFTY+ support",
-  "settings_sourceCode": "Source code and AGPLv3 license"
+  "settings_sourceCode": "Source code and AGPLv3 license",
+  "settings_backgroundTrackingTitle": "Background tracking",
+  "settings_backgroundTrackingHint": "After connecting to the CRAFTY+, tracking continues while the screen is off. Keep the ongoing notification active and do not force stop the app.",
+  "settings_backgroundBatteryHint": "Android alert when the CRAFTY+ battery reaches 20% or less. Allow notifications to receive it.",
+  "settings_backupTitle": "Data backup",
+  "settings_backupHint": "Export history and settings to transfer them between the PWA and Android app. Restoring merges with existing history.",
+  "settings_backupExport": "Export",
+  "settings_backupImport": "Import",
+  "settings_backupExported": "Choose where to save the backup.",
+  "settings_backupImported": "Backup imported. Reload the app to view the data.",
+  "settings_backupReload": "Reload",
+  "settings_backupFailed": "The backup could not be processed. Check the file and try again."
 }

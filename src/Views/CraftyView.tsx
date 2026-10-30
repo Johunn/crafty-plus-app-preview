@@ -1,7 +1,7 @@
 import { A, type RouteSectionProps, useNavigate } from "@solidjs/router";
+import Activity from "lucide-solid/icons/activity";
 import ArrowRight from "lucide-solid/icons/arrow-right";
 import ChevronRight from "lucide-solid/icons/chevron-right";
-import Activity from "lucide-solid/icons/activity";
 import MapPin from "lucide-solid/icons/map-pin";
 import Minus from "lucide-solid/icons/minus";
 import History from "lucide-solid/icons/rotate-ccw-clock";
@@ -24,12 +24,13 @@ import { ShutdownTime } from "../components/crafty/ShutdownTime";
 import { Temperature } from "../components/crafty/Temperature";
 import { DeviceShell } from "../components/DeviceShell";
 import { m } from "../paraglide/messages";
+import { getLocale } from "../paraglide/runtime";
 import { useBluetooth } from "../provider/BluetoothProvider";
-import { CraftyProvider, useCrafty } from "../provider/CraftyProvider";
 import { useConnectionUsage } from "../provider/ConnectionUsageProvider";
+import { CraftyProvider, useCrafty } from "../provider/CraftyProvider";
 import { LiveSessionProvider } from "../provider/LiveSessionProvider";
 import { buildRoute } from "../routes";
-import { ConnectionState } from "../utils/uuids";
+import { isNativeAndroidBluetooth } from "../utils/androidBluetooth";
 import {
   countConsumptionSessionsBetween,
   ESTIMATED_GRAMS_PER_SESSION,
@@ -37,9 +38,9 @@ import {
   SESSION_MIN_HOT_MS,
   SESSION_TEMP_THRESHOLD_C,
 } from "../utils/connectionUsage";
-import { isPlausibleTemp } from "../utils/sessionHistory";
-import { getLocale } from "../paraglide/runtime";
 import { alertCraftyBatteryLow } from "../utils/notify";
+import { isPlausibleTemp } from "../utils/sessionHistory";
+import { ConnectionState } from "../utils/uuids";
 
 export const CraftyView: Component = () => {
   const { actions, derived, isCraftyPlus } = useCrafty();
@@ -141,6 +142,7 @@ const CraftyConsumptionSummary = () => {
           <Show when={dailyTrend() !== "empty"}>
             <span
               class="mt-0.5 flex w-fit animate-pulse items-center gap-1 rounded-full px-1.5 py-0.5 font-medium text-[9px]"
+              role="status"
               classList={{
                 "bg-red-500/10 text-red-600 dark:text-red-400":
                   dailyTrend() === "above",
@@ -208,7 +210,9 @@ const CraftyConsumptionSummary = () => {
 const CraftyBattery = () => {
   const { state } = useCrafty();
   createEffect(() => {
-    if (state.loaded) alertCraftyBatteryLow(state.batteryLevel);
+    if (state.loaded && !isNativeAndroidBluetooth()) {
+      alertCraftyBatteryLow(state.batteryLevel);
+    }
   });
   return <BatteryChip level={state.loaded ? state.batteryLevel : undefined} />;
 };
@@ -235,6 +239,7 @@ const CraftyLiveSession = (props: { children: JSX.Element }) => {
 
 /** Confirms one consumption session after three continuous hot minutes. */
 const CraftyConsumptionTracker = () => {
+  if (isNativeAndroidBluetooth()) return null;
   const { state } = useCrafty();
   const usage = useConnectionUsage();
   let initialized = false;

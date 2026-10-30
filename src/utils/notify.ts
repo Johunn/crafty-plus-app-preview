@@ -49,6 +49,12 @@ export const getLowBatteryNotifyPreference = () =>
   isNotificationSupported() &&
   Notification.permission === "granted";
 
+export const getLowBatteryNotifyPreferenceSetting = () =>
+  readFlag(LOW_BATTERY_KEY);
+
+export const storeLowBatteryNotifyPreference = (enabled: boolean) =>
+  writeFlag(LOW_BATTERY_KEY, enabled);
+
 export const setLowBatteryNotifyPreference = async (enabled: boolean) => {
   if (enabled && isNotificationSupported()) {
     const permission =

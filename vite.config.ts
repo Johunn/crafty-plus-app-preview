@@ -28,8 +28,7 @@ export default defineConfig({
       manifest: {
         name: "CRAFTY+ · Contrôle et suivi",
         short_name: "CRAFTY+",
-        description:
-          "Contrôle et suivi du CRAFTY+ en Bluetooth",
+        description: "Contrôle et suivi du CRAFTY+ en Bluetooth",
         start_url: "./",
         scope: "./",
         lang: "fr",

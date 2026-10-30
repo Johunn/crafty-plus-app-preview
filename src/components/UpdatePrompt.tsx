@@ -3,6 +3,7 @@ import { onCleanup } from "solid-js";
 import { m } from "../paraglide/messages";
 import { useBluetooth } from "../provider/BluetoothProvider";
 import { useToast } from "../provider/ToastProvider";
+import { isNativeAndroidBluetooth } from "../utils/androidBluetooth";
 import { ConnectionState } from "../utils/uuids";
 
 // An installed app can stay open for days; look for a new version regularly
@@ -13,6 +14,9 @@ const UPDATE_CHECK_INTERVAL_MS = 60 * 60_000;
  * away; otherwise it asks first, since reloading ends the connection.
  */
 export const UpdatePrompt = () => {
+  // Android APK updates are distributed as APK artifacts; WebView should not
+  // try to install a PWA service worker for its packaged local assets.
+  if (isNativeAndroidBluetooth()) return null;
   const { connectionState } = useBluetooth();
   const showToast = useToast();
   let registration: ServiceWorkerRegistration | undefined;
