@@ -11,7 +11,7 @@ interface RepeatButtonProps {
   onStep: () => void;
   disabled?: boolean;
   variant?: "default" | "secondary";
-  size?: "icon" | "icon-lg";
+  size?: "icon-sm" | "icon" | "icon-lg";
   class?: string;
   "aria-label": string;
   children: JSX.Element;

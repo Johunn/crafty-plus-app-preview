@@ -58,22 +58,26 @@ interface OffsetStepperProps {
 export const OffsetStepper = (props: OffsetStepperProps) => (
   <Card
     class={cn(
-      "flex flex-col gap-2.5 p-3.5 transition-colors",
+      "flex min-w-0 flex-col gap-2.5 p-2.5 transition-colors",
       props.active && "border-primary/50 bg-primary-soft"
     )}
   >
-    <span class="text-muted-foreground text-xs">{props.label}</span>
-    <div class="flex items-center justify-between gap-2">
+    <span class="text-center text-muted-foreground text-xs">{props.label}</span>
+    <div class="grid grid-cols-[2rem_minmax(0,1fr)_2rem] items-center gap-1">
       <RepeatButton
-        size="icon"
+        size="icon-sm"
+        class="size-8 justify-self-center"
         onStep={props.onDecrease}
         aria-label={m.temperature_decreaseOffset({ name: props.label })}
       >
         <Minus />
       </RepeatButton>
-      <span class="font-semibold text-lg tabular-nums">{props.value}</span>
+      <span class="min-w-0 whitespace-nowrap text-center font-semibold text-sm tabular-nums">
+        {props.value}
+      </span>
       <RepeatButton
-        size="icon"
+        size="icon-sm"
+        class="size-8 justify-self-center"
         onStep={props.onIncrease}
         aria-label={m.temperature_increaseOffset({ name: props.label })}
       >

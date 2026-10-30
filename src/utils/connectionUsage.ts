@@ -13,8 +13,18 @@ export interface ConnectionCycle {
   estimatedEnd?: boolean;
 }
 
-export const TRACKING_REST_MS = 6 * 60 * 60 * 1000;
+export const TRACKING_REST_MS = 8 * 60 * 60 * 1000;
 export const ESTIMATED_GRAMS_PER_CONNECTION = 0.25;
+
+export const countConnectionsBetween = (
+  cycles: ConnectionCycle[],
+  startInclusive: number,
+  endExclusive: number
+) =>
+  cycles.filter(
+    (cycle) =>
+      cycle.startedAt >= startInclusive && cycle.startedAt < endExclusive
+  ).length;
 
 export const startConnectionCycle = (
   cycles: ConnectionCycle[],

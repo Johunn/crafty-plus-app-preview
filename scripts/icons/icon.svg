@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <title>Reactive Volcano App</title>
+  <title>CRAFTY+ App</title>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#1f1f23"/>
@@ -14,24 +14,44 @@
       <stop offset="0" stop-color="#fbbf24"/>
       <stop offset="1" stop-color="#f97316"/>
     </linearGradient>
-    <linearGradient id="mountain" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fb923c"/>
-      <stop offset="1" stop-color="#c2410c"/>
+    <linearGradient id="device" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#42454a"/>
+      <stop offset="0.48" stop-color="#202226"/>
+      <stop offset="1" stop-color="#111215"/>
+    </linearGradient>
+    <linearGradient id="cap" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#55585c"/>
+      <stop offset="1" stop-color="#25272a"/>
     </linearGradient>
   </defs>
   <rect id="background" width="512" height="512" rx="112" fill="url(#bg)"/>
   <circle cx="256" cy="268" r="190" fill="url(#glow)"/>
-  <!-- Gauge: a 270° track, three quarters filled, open at the bottom -->
+  <!-- Temperature arc echoes the original app icon -->
   <circle cx="256" cy="268" r="148" fill="none" stroke="#2a2a2f" stroke-width="30"
     stroke-linecap="round" stroke-dasharray="697.4 929.9" transform="rotate(135 256 268)"/>
   <circle cx="256" cy="268" r="148" fill="none" stroke="url(#arc)" stroke-width="30"
     stroke-linecap="round" stroke-dasharray="523 929.9" transform="rotate(135 256 268)"/>
-  <!-- Volcano with rising vapor -->
-  <path d="M158 362 L222 250 Q229 238 243 238 L269 238 Q283 238 290 250 L354 362 Q359 372 348 372 L164 372 Q153 372 158 362 Z" fill="url(#mountain)"/>
-  <path d="M222 250 Q229 238 243 238 L269 238 Q283 238 290 250 L283 262 Q256 276 229 262 Z" fill="#7c2d12" opacity="0.6"/>
-  <g fill="none" stroke="#fde68a" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M256 218 c-13 -11 -13 -22 0 -33 c13 -11 13 -22 0 -33"/>
-    <path d="M222 216 c-10 -9 -10 -18 0 -27 c10 -9 10 -18 0 -27" opacity="0.7"/>
-    <path d="M290 216 c-10 -9 -10 -18 0 -27 c10 -9 10 -18 0 -27" opacity="0.7"/>
+  <!-- Simplified upright silhouette of the compact CRAFTY+ portable device -->
+  <path d="M207 184v-18q0-15 15-15h68q15 0 15 15v18h16q13 0 15 14l12 151q2 20-17 27-36 14-75 14t-75-14q-19-7-17-27l12-151q2-14 15-14z"
+    fill="url(#device)" stroke="#66696d" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M207 181q0-13 14-13h70q14 0 14 13v15H207z" fill="url(#cap)" stroke="#77797c" stroke-width="4"/>
+  <path d="M220 175h72" stroke="#96989b" stroke-width="4" stroke-linecap="round" opacity="0.65"/>
+  <!-- Molded side ribs -->
+  <g fill="none" stroke="#686b6f" stroke-width="4" stroke-linecap="round" opacity="0.72">
+    <path d="M191 218l-9 116"/>
+    <path d="M201 216l-8 122"/>
+    <path d="M321 216l8 122"/>
+    <path d="M331 218l9 116"/>
   </g>
+  <path d="M216 211q40-12 80 0v139q-40 13-80 0z" fill="#16181b" opacity="0.78"/>
+  <!-- Single-button control and temperature LEDs -->
+  <g fill="#fbbf24">
+    <circle cx="256" cy="250" r="5"/>
+    <circle cx="256" cy="268" r="5"/>
+    <circle cx="256" cy="286" r="5"/>
+  </g>
+  <circle cx="256" cy="318" r="18" fill="#20140e" stroke="#f97316" stroke-width="6"/>
+  <path d="M256 307v13m-8 0h16" fill="none" stroke="#fed7aa" stroke-width="4" stroke-linecap="round"/>
+  <text x="256" y="365" text-anchor="middle" fill="#d6d3d1" font-family="Arial, sans-serif"
+    font-size="19" font-weight="700" letter-spacing="1.2">CRAFTY+</text>
 </svg>

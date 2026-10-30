@@ -71,7 +71,7 @@ export const Temperature = () => {
           }
         >
           <ToggleTile
-            label={m.heat_heater()}
+            label={m.crafty_heatBoost()}
             status={derived.isHeaterActive() ? m.common_on() : m.common_off()}
             icon={Power}
             pressed={derived.isHeaterActive()}
@@ -79,7 +79,7 @@ export const Temperature = () => {
           />
         </Show>
         <OffsetStepper
-          label={m.temperature_boostOffset()}
+          label={m.crafty_boostPower()}
           value={`+${displayOffset(state.boostTemp)}°`}
           onDecrease={() => actions.setBoostTemp(state.boostTemp - 1)}
           onIncrease={() => actions.setBoostTemp(state.boostTemp + 1)}
