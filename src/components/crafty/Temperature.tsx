@@ -23,6 +23,7 @@ export const Temperature = () => {
   const unit = () => temperatureUnit();
   const displayTemp = (celsius: number) =>
     toDisplayTemperature(celsius, unit() === "C");
+  const effectiveTargetTemp = () => derived.effectiveTargetTemp();
   const displayOffset = (celsius: number) =>
     unit() === "C" ? Math.round(celsius) : Math.round(celsius * 1.8);
   // An "unknown" marker from the device must not show up as a temperature
@@ -33,24 +34,24 @@ export const Temperature = () => {
     <>
       <TemperatureGauge
         current={currentTemp()}
-        target={state.targetTemp}
+        target={effectiveTargetTemp()}
         min={Limits.MIN_TEMP}
         max={Limits.MAX_TEMP}
         heating={derived.isHeaterActive()}
         reached={derived.isSetpointReached()}
         minLabel={`${displayTemp(Limits.MIN_TEMP)}°`}
         maxLabel={`${displayTemp(Limits.MAX_TEMP)}°`}
-        targetLabel={`${displayTemp(state.targetTemp)} °${unit()}`}
+        targetLabel={`${displayTemp(effectiveTargetTemp())} °${unit()}`}
       >
         <TemperatureDisplay
-          value={displayTemp(currentTemp() ?? state.targetTemp)}
+          value={displayTemp(currentTemp() ?? effectiveTargetTemp())}
           unit={unit()}
           raisedUnit
         />
       </TemperatureGauge>
 
       <TargetStepper
-        label={m.temperature_target()}
+        label={m.temperature_base()}
         onDecrease={() => actions.setTargetTemp(state.targetTemp - 1)}
         onIncrease={() => actions.setTargetTemp(state.targetTemp + 1)}
         canDecrease={state.targetTemp > Limits.MIN_TEMP}
@@ -75,8 +76,16 @@ export const Temperature = () => {
           }
         >
           <ToggleTile
-            label={m.crafty_heatBoost()}
-            status={derived.isHeaterActive() ? m.common_on() : m.common_off()}
+            label={m.crafty_heating()}
+            status={
+              !derived.isHeaterActive()
+                ? m.common_off()
+                : derived.isSuperBoostActive()
+                  ? m.crafty_superBoostMode()
+                  : derived.isBoostActive()
+                    ? m.crafty_boostMode()
+                    : m.crafty_baseMode()
+            }
             icon={Power}
             pressed={derived.isHeaterActive()}
             onToggle={actions.toggleHeater}
@@ -91,8 +100,12 @@ export const Temperature = () => {
         />
       </div>
 
+      <p class="px-1 text-muted-foreground text-[11px] leading-relaxed">
+        {m.crafty_boostHowTo()}
+      </p>
+
       <TemperatureChart
-        target={state.targetTemp}
+        target={effectiveTargetTemp()}
         unit={unit()}
         toDisplay={displayTemp}
       />

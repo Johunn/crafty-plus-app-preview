@@ -221,7 +221,7 @@ const CraftyLiveSession = (props: { children: JSX.Element }) => {
       <LiveSessionProvider
         reading={() => ({
           current: state.currentTemp,
-          target: state.targetTemp,
+          target: derived.effectiveTargetTemp(),
           heating: derived.isHeaterActive(),
           reached: derived.isHeaterActive() && derived.isSetpointReached(),
           ready: state.loaded,

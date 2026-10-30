@@ -194,6 +194,29 @@ export const createCraftyStore = (
 
   const derived = {
     isHeaterActive: () => isHeaterActive(state.projectRegister),
+    isBoostActive: () =>
+      hasBit(state.projectRegister, ProjectRegisterBit.BOOST_MODE),
+    isSuperBoostActive: () =>
+      hasBit(state.projectRegister, ProjectRegisterBit.SUPERBOOST_MODE),
+    effectiveTargetTemp: () => {
+      const baseTemperature = state.targetTemp;
+      if (!isHeaterActive(state.projectRegister)) return baseTemperature;
+      if (hasBit(state.projectRegister, ProjectRegisterBit.SUPERBOOST_MODE)) {
+        return clamp(
+          baseTemperature + state.boostTemp + 15,
+          Limits.MIN_TEMP,
+          Limits.MAX_TEMP
+        );
+      }
+      if (hasBit(state.projectRegister, ProjectRegisterBit.BOOST_MODE)) {
+        return clamp(
+          baseTemperature + state.boostTemp,
+          Limits.MIN_TEMP,
+          Limits.MAX_TEMP
+        );
+      }
+      return baseTemperature;
+    },
     isSetpointReached: () => isSetpointReached(state.statusRegister2),
     isVibrationOn: () =>
       !hasBit(state.statusRegister2, StatusRegister2Bit.DISABLE_VIBRATION),
