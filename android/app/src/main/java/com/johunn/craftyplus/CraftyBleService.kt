@@ -164,7 +164,9 @@ class CraftyBleService : Service() {
             }
             "read" -> enqueue(Operation(id, "read", command.optString("serviceUuid"), command.optString("characteristicUuid")))
             "write" -> {
-                val value = command.optJSONArray("value")?.toBytes() ?: byteArrayOf()
+                val value = command.optJSONArray("value")?.let { array ->
+                    ByteArray(array.length()) { index -> array.optInt(index).toByte() }
+                } ?: byteArrayOf()
                 enqueue(Operation(id, "write", command.optString("serviceUuid"), command.optString("characteristicUuid"), value))
             }
             "notifyStart" -> {
