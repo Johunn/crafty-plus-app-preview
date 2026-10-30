@@ -14,6 +14,8 @@ Après chaque publication du dépôt public, GitHub Actions construit un APK de 
 4. Lance **CRAFTY+**, active le Bluetooth du téléphone et connecte le CRAFTY+ depuis l’écran d’accueil de l’application. Autorise l’accès Bluetooth. Le suivi natif démarre avec la connexion et affiche une notification persistante.
 5. Tu peux ensuite verrouiller l’écran ou passer dans une autre application. Ne choisis pas **Arrêter le suivi** dans la notification si tu veux continuer à enregistrer les données.
 
+Tant que la notification persistante **Suivi actif** reste présente, tu n’as pas besoin d’ouvrir l’application à chaque session : le service écoute le CRAFTY+ et tente de se reconnecter si la liaison tombe puis que l’appareil redevient disponible.
+
 Sur Samsung, règle aussi **Paramètres > Applications > CRAFTY+ > Batterie > Non restreinte** (les libellés peuvent varier selon One UI). Le service peut être arrêté si Android ou l’utilisateur force l’arrêt de l’application. Après un redémarrage du téléphone ou un arrêt forcé, relance l’application et reconnecte le CRAFTY+.
 
 Le compteur natif s’appuie sur les températures reçues par Bluetooth : une session est validée après 3 minutes au-dessus de 170 °C. Une baisse sous le seuil durant 90 secondes clôt la session. Si aucun relevé de température n’arrive pendant plus de 12 secondes, le compteur clôt la session à la dernière mesure et attend une nouvelle période continue. La quantité reste une estimation de 0,25 g par session qualifiée. Elle ne mesure pas chaque inhalation ni la masse réelle chargée dans la capsule.
