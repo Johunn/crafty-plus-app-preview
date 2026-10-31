@@ -10,6 +10,8 @@ Après chaque publication du dépôt public, GitHub Actions construit un APK de 
 
 Si tu as déjà installé la version qui affiche un écran blanc, désinstalle-la avant d’installer le nouvel APK. Cette version corrige le chemin de démarrage de l’interface.
 
+Pour les mises à jour, les APK de test générés par GitHub Actions peuvent avoir des certificats de signature différents. Si Android refuse d’installer le nouvel APK par-dessus l’ancien, ouvre d’abord l’ancienne application, attends que le suivi apparaisse, puis exporte le fichier JSON depuis **Réglages > Sauvegarde des données**. Vérifie que le fichier est bien enregistré et accessible. Désinstalle ensuite l’ancienne version, installe le nouvel APK et importe cette sauvegarde depuis les réglages. La désinstallation efface les données locales de l’application.
+
 1. Ouvre le workflow, puis son exécution la plus récente terminée avec succès.
 2. Télécharge l’artefact **crafty-plus-android-debug-apk**, décompresse-le et récupère `app-debug.apk`.
 3. Ouvre l’APK sur le téléphone. Si Android le demande, autorise l’installation depuis la source utilisée pour le téléchargement.
