@@ -8,6 +8,8 @@ La version de test reste disponible à l’adresse publique [https://johunn.gith
 
 Après chaque publication du dépôt public, GitHub Actions construit un APK de test dans le workflow [Build CRAFTY+ Android APK](https://github.com/Johunn/crafty-plus-app-preview/actions/workflows/android.yml).
 
+Si tu as déjà installé la version qui affiche un écran blanc, désinstalle-la avant d’installer le nouvel APK. Cette version corrige le chemin de démarrage de l’interface.
+
 1. Ouvre le workflow, puis son exécution la plus récente terminée avec succès.
 2. Télécharge l’artefact **crafty-plus-android-debug-apk**, décompresse-le et récupère `app-debug.apk`.
 3. Ouvre l’APK sur le téléphone. Si Android le demande, autorise l’installation depuis la source utilisée pour le téléchargement.

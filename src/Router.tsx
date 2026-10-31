@@ -43,6 +43,16 @@ export const Routes = () => {
   // router would turn into "//connect" and then fail to match any route.
   const base = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
+  // The Android WebView opens the packaged entry file explicitly. Normalize
+  // that file URL to the app base before Solid Router matches its first route;
+  // otherwise `/assets/www/index.html` has no matching route and renders blank.
+  if (
+    import.meta.env.MODE === "android" &&
+    window.location.pathname === `${base}/index.html`
+  ) {
+    window.history.replaceState(null, "", `${base}/`);
+  }
+
   return (
     <Router base={base || undefined}>
       <Route path={ROUTES.ROOT} component={Layout}>
