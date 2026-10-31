@@ -26,6 +26,18 @@ export const Temperature = () => {
   const effectiveTargetTemp = () => derived.effectiveTargetTemp();
   const displayOffset = (celsius: number) =>
     unit() === "C" ? Math.round(celsius) : Math.round(celsius * 1.8);
+  const activeTargetLabel = () =>
+    derived.isSuperBoostActive()
+      ? m.crafty_superBoostTarget()
+      : derived.isBoostActive()
+        ? m.crafty_boostTarget()
+        : m.temperature_base();
+  const baseTemperatureDescription = () =>
+    derived.isBoostActive() || derived.isSuperBoostActive()
+      ? m.crafty_baseTemperatureNote({
+          temperature: `${displayTemp(state.targetTemp)} °${unit()}`,
+        })
+      : undefined;
   // An "unknown" marker from the device must not show up as a temperature
   const currentTemp = () =>
     isPlausibleTemp(state.currentTemp) ? state.currentTemp : undefined;
@@ -51,14 +63,15 @@ export const Temperature = () => {
       </TemperatureGauge>
 
       <TargetStepper
-        label={m.temperature_base()}
+        label={activeTargetLabel()}
+        description={baseTemperatureDescription()}
         onDecrease={() => actions.setTargetTemp(state.targetTemp - 1)}
         onIncrease={() => actions.setTargetTemp(state.targetTemp + 1)}
         canDecrease={state.targetTemp > Limits.MIN_TEMP}
         canIncrease={state.targetTemp < Limits.MAX_TEMP}
       >
         <TemperatureDisplay
-          value={displayTemp(state.targetTemp)}
+          value={displayTemp(effectiveTargetTemp())}
           unit={unit()}
         />
       </TargetStepper>

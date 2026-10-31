@@ -61,7 +61,9 @@ class CraftyBleService : Service() {
         override fun run() {
             if (connected) {
                 val characteristic = findCharacteristic(SERVICE_CRAFTY_CONTROL, CHAR_CURRENT_TEMP)
-                if (characteristic != null && currentOperation == null && operations.isEmpty()) {
+                val temperatureIsStale = lastTemperatureAt == 0L ||
+                    System.currentTimeMillis() - lastTemperatureAt >= TEMP_FALLBACK_STALE_MS
+                if (characteristic != null && temperatureIsStale && currentOperation == null && operations.isEmpty()) {
                     enqueue(Operation(null, "read", SERVICE_CRAFTY_CONTROL, CHAR_CURRENT_TEMP))
                 }
                 handler.postDelayed(this, POLL_INTERVAL_MS)
@@ -636,7 +638,8 @@ class CraftyBleService : Service() {
         private const val QUALIFY_DURATION_MS = 3 * 60 * 1000L
         private const val COOLING_GRACE_MS = 90 * 1000L
         private const val MAX_TEMP_GAP_MS = 12_000L
-        private const val POLL_INTERVAL_MS = 5_000L
+        private const val POLL_INTERVAL_MS = 4_000L
+        private const val TEMP_FALLBACK_STALE_MS = 6_000L
         private const val LOW_BATTERY_THRESHOLD = 20
         private const val SERVICE_CRAFTY_CONTROL = "00000001-4c45-4b43-4942-265a524f5453"
         private const val SERVICE_CRAFTY_STATUS = "00000003-4c45-4b43-4942-265a524f5453"

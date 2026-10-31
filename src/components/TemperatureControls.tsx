@@ -11,6 +11,7 @@ interface TargetStepperProps {
   label: string;
   /** The target as shown, in the device's unit */
   children: JSX.Element;
+  description?: JSX.Element;
   onIncrease: () => void;
   onDecrease: () => void;
   canIncrease?: boolean;
@@ -34,6 +35,11 @@ export const TargetStepper = (props: TargetStepperProps) => (
       <span class="font-medium text-[40px] leading-tight tracking-[-0.03em]">
         {props.children}
       </span>
+      <Show when={props.description}>
+        <span class="text-center text-[11px] leading-tight text-muted-foreground">
+          {props.description}
+        </span>
+      </Show>
     </div>
     <RepeatButton
       variant="default"
