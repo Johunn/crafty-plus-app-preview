@@ -252,12 +252,9 @@ class MainActivity : Activity() {
         scanResults.clear()
         val callback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
-                val name = result.scanRecord?.deviceName ?: result.device.name ?: return
-                val craftyName = name.contains("CRAFTY", ignoreCase = true)
-                val advertisesCrafty = result.scanRecord?.serviceUuids?.any {
-                    it.uuid.toString().equals(CRAFTY_SERVICE_UUID, ignoreCase = true)
-                } == true
-                if (craftyName || advertisesCrafty) scanResults[result.device.address] = result
+                // Keep all advertisements so a device with a hidden local name
+                // can still be selected if the scan doesn't recognize it.
+                scanResults[result.device.address] = result
             }
 
             override fun onScanFailed(errorCode: Int) {
@@ -287,36 +284,63 @@ class MainActivity : Activity() {
             CraftyBleEvents.failure(id, error)
             return
         }
-        val candidates = scanResults.values
+        val scannedDevices = scanResults.values
             .distinctBy { it.device.address }
             .sortedByDescending { it.rssi }
             .take(12)
-        if (candidates.isEmpty()) {
-            CraftyBleEvents.failure(id, "Aucun CRAFTY+ trouvé. Allume l’appareil et rapproche-le du téléphone.", "NotFoundError")
+        if (scannedDevices.isEmpty()) {
+            CraftyBleEvents.failure(
+                id,
+                "Aucun appareil Bluetooth détecté. Vérifie que le CRAFTY+ et le Bluetooth du téléphone sont allumés, puis autorise « Appareils à proximité » dans les paramètres Android.",
+                "NotFoundError"
+            )
             return
         }
+        val recognized = scannedDevices.filter(::isSupportedStorzDevice)
+        val candidates = recognized.ifEmpty { scannedDevices }
         val labels = candidates.map { result ->
-            val name = result.scanRecord?.deviceName ?: result.device.name ?: "CRAFTY+"
+            val name = getScanDeviceName(result)
             "$name  ·  ${result.rssi} dBm"
         }.toTypedArray()
-        AlertDialog.Builder(this)
-            .setTitle("Choisir le CRAFTY+")
-            .setItems(labels) { _, which ->
-                val result = candidates[which]
-                val name = result.scanRecord?.deviceName ?: result.device.name ?: "CRAFTY+"
-                getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                    .putString(KEY_DEVICE_ADDRESS, result.device.address)
-                    .putString(KEY_DEVICE_NAME, name)
-                    .apply()
-                CraftyBleEvents.response(
-                    id,
-                    JSONObject().put("id", result.device.address).put("name", name)
-                )
-            }
-            .setOnCancelListener {
-                CraftyBleEvents.failure(id, "Sélection annulée", "NotFoundError")
-            }
-            .show()
+        val chooser = AlertDialog.Builder(this)
+            .setTitle(
+                if (recognized.isNotEmpty()) "Choisir le CRAFTY+"
+                else "Appareils Bluetooth à proximité"
+            )
+        if (recognized.isEmpty()) {
+            chooser.setMessage("Le CRAFTY+ n’a pas été identifié par son nom. Choisis-le dans la liste des appareils détectés.")
+        }
+        chooser.setItems(labels) { _, which ->
+            val result = candidates[which]
+            val name = getScanDeviceName(result)
+            getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+                .putString(KEY_DEVICE_ADDRESS, result.device.address)
+                .putString(KEY_DEVICE_NAME, name)
+                .apply()
+            CraftyBleEvents.response(
+                id,
+                JSONObject().put("id", result.device.address).put("name", name)
+            )
+        }.setOnCancelListener {
+            CraftyBleEvents.failure(id, "Sélection annulée", "NotFoundError")
+        }.show()
+    }
+
+    private fun getScanDeviceName(result: ScanResult): String =
+        result.scanRecord?.deviceName?.takeIf { it.isNotBlank() }
+            ?: runCatching { result.device.name }.getOrNull()?.takeIf { it.isNotBlank() }
+            ?: "Appareil Bluetooth (${result.device.address.takeLast(5)})"
+
+    private fun isSupportedStorzDevice(result: ScanResult): Boolean {
+        val name = getScanDeviceName(result).uppercase()
+        val hasSupportedName = name.contains("CRAFTY") ||
+            name.startsWith("STORZ&BICKEL") ||
+            name.startsWith("STORZ & BICKEL") ||
+            name.startsWith("S&B")
+        val advertisesSupportedService = result.scanRecord?.serviceUuids?.any {
+            SUPPORTED_DEVICE_SERVICES.any { uuid -> it.uuid.toString().equals(uuid, ignoreCase = true) }
+        } == true
+        return hasSupportedName || advertisesSupportedService
     }
 
     private var pendingBackupJson: String? = null
@@ -360,5 +384,13 @@ class MainActivity : Activity() {
         private const val REQUEST_EXPORT_BACKUP = 7103
         private const val SCAN_DURATION_MS = 8_000L
         private const val CRAFTY_SERVICE_UUID = "00000001-4c45-4b43-4942-265a524f5453"
+        private val SUPPORTED_DEVICE_SERVICES = setOf(
+            CRAFTY_SERVICE_UUID,
+            "00000002-4c45-4b43-4942-265a524f5453",
+            "00000003-4c45-4b43-4942-265a524f5453",
+            "10100000-5354-4f52-5a26-4249434b454c",
+            "10110000-5354-4f52-5a26-4249434b454c",
+            "00000000-5354-4f52-5a26-4249434b454c"
+        )
     }
 }

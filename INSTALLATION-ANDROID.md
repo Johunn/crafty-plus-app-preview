@@ -16,6 +16,8 @@ Si tu as déjà installé la version qui affiche un écran blanc, désinstalle-l
 4. Lance **CRAFTY+**, active le Bluetooth du téléphone et connecte le CRAFTY+ depuis l’écran d’accueil de l’application. Autorise l’accès Bluetooth. Le suivi natif démarre avec la connexion et affiche une notification persistante.
 5. Tu peux ensuite verrouiller l’écran ou passer dans une autre application. Ne choisis pas **Arrêter le suivi** dans la notification si tu veux continuer à enregistrer les données.
 
+Sur Android, l’autorisation importante pour la recherche est **Appareils à proximité** (ou **Appareils à proximité et Bluetooth**) dans les permissions de l’application. L’autorisation **Notifications** sert à afficher le suivi persistant et les alertes, pas à détecter le CRAFTY+. Si son nom n’est pas reconnu par la recherche, la nouvelle version affiche les autres appareils BLE trouvés pour permettre une sélection manuelle.
+
 Tant que la notification persistante **Suivi actif** reste présente, tu n’as pas besoin d’ouvrir l’application à chaque session : le service écoute le CRAFTY+ et tente de se reconnecter si la liaison tombe puis que l’appareil redevient disponible.
 
 Sur Samsung, règle aussi **Paramètres > Applications > CRAFTY+ > Batterie > Non restreinte** (les libellés peuvent varier selon One UI). Le service peut être arrêté si Android ou l’utilisateur force l’arrêt de l’application. Après un redémarrage du téléphone ou un arrêt forcé, relance l’application et reconnecte le CRAFTY+.
