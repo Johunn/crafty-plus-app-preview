@@ -284,11 +284,10 @@ class MainActivity : Activity() {
             CraftyBleEvents.failure(id, error)
             return
         }
-        val scannedDevices = scanResults.values
+        val allScannedDevices = scanResults.values
             .distinctBy { it.device.address }
             .sortedByDescending { it.rssi }
-            .take(12)
-        if (scannedDevices.isEmpty()) {
+        if (allScannedDevices.isEmpty()) {
             CraftyBleEvents.failure(
                 id,
                 "Aucun appareil Bluetooth détecté. Vérifie que le CRAFTY+ et le Bluetooth du téléphone sont allumés, puis autorise « Appareils à proximité » dans les paramètres Android.",
@@ -296,8 +295,8 @@ class MainActivity : Activity() {
             )
             return
         }
-        val recognized = scannedDevices.filter(::isSupportedStorzDevice)
-        val candidates = recognized.ifEmpty { scannedDevices }
+        val recognized = allScannedDevices.filter(::isSupportedStorzDevice).take(12)
+        val candidates = recognized.ifEmpty { allScannedDevices.take(12) }
         val labels = candidates.map { result ->
             val name = getScanDeviceName(result)
             "$name  ·  ${result.rssi} dBm"
