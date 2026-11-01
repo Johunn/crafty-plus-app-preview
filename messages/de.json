@@ -298,6 +298,7 @@
   "settings_backgroundTrackingHint": "Wenn die Option aus ist, wird die Verbindung getrennt, sobald du die App verlässt, und die Aufzeichnung pausiert. Bereits gespeicherte Daten bleiben erhalten.",
   "settings_backgroundTrackingSaveFailed": "Die Einstellung für die Hintergrundaufzeichnung konnte nicht gespeichert werden.",
   "settings_deviceSettingSaveFailed": "Der CRAFTY+ hat diese Einstellung nicht bestätigt. Prüfe die Verbindung und versuche es erneut.",
+  "settings_waitingDeviceRead": "Einstellungen vom CRAFTY+ werden gelesen…",
   "settings_backgroundBatteryHint": "Android-Benachrichtigung, wenn der CRAFTY+-Akku 20 % oder weniger erreicht. Erlaube Benachrichtigungen, um sie zu erhalten.",
   "settings_backupTitle": "Datensicherung",
   "settings_backupHint": "Exportiere Verlauf und Einstellungen, um sie zwischen PWA und Android-App zu übertragen. Beim Import werden vorhandene Verlaufsdaten zusammengeführt.",

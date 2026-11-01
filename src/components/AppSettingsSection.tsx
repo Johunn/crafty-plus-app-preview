@@ -56,6 +56,8 @@ export const AppSettingsSection = () => {
   );
   const [sound, setSound] = createSignal(getSoundPreference());
   const [backgroundTracking, setBackgroundTracking] = createSignal(true);
+  const [backgroundTrackingLoaded, setBackgroundTrackingLoaded] =
+    createSignal(false);
   let backupInput!: HTMLInputElement;
 
   onMount(() => {
@@ -64,8 +66,13 @@ export const AppSettingsSection = () => {
         .then(setNotifyLowBattery)
         .catch(() => {});
       void loadBackgroundTrackingPreference()
-        .then(setBackgroundTracking)
-        .catch(() => {});
+        .then((enabled) => {
+          setBackgroundTracking(enabled);
+          setBackgroundTrackingLoaded(true);
+        })
+        .catch(() =>
+          showToast({ message: m.settings_backgroundTrackingSaveFailed() })
+        );
     }
   });
 
@@ -224,6 +231,7 @@ export const AppSettingsSection = () => {
           label={m.settings_backgroundTrackingTitle()}
           description={m.settings_backgroundTrackingHint()}
           checked={backgroundTracking()}
+          disabled={!backgroundTrackingLoaded()}
           onChange={toggleBackgroundTracking}
         />
       </Show>

@@ -140,6 +140,7 @@ class CraftyBleService : Service() {
                     CraftyBleEvents.failure(id, "Choisis d’abord le CRAFTY+", "NotFoundError")
                     return
                 }
+                isFinishing = false
                 trackingEnabled = preferences.getBoolean(KEY_BACKGROUND_TRACKING, true)
                 deviceAddress = address
                 preferences.edit().putBoolean(KEY_TRACKING, trackingEnabled).putString(KEY_ADDRESS, address).apply()
@@ -160,6 +161,7 @@ class CraftyBleService : Service() {
                     .putBoolean(KEY_TRACKING, enabled).commit()
                 trackingEnabled = enabled
                 if (enabled) {
+                    isFinishing = false
                     deviceAddress = preferences.getString(KEY_ADDRESS, deviceAddress)
                     startForegroundIfNeeded()
                     if (!connected) connectSavedDevice(id)
@@ -175,7 +177,7 @@ class CraftyBleService : Service() {
                     endTrackedRecords()
                     stopForeground(STOP_FOREGROUND_REMOVE)
                     isForeground = false
-                    CraftyBleEvents.response(id, true)
+                    CraftyBleEvents.response(id, enabled)
                 }
             }
             "hasService" -> {
@@ -213,7 +215,7 @@ class CraftyBleService : Service() {
 
     @Suppress("MissingPermission")
     private fun connectSavedDevice(requestId: String?, autoConnect: Boolean = true) {
-        if (!trackingEnabled) return
+        if (autoConnect && !trackingEnabled) return
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
             requestId?.let { CraftyBleEvents.failure(it, "Autorisation Bluetooth absente", "NotAllowedError") }
             return

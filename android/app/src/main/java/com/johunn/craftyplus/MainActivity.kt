@@ -214,7 +214,12 @@ class MainActivity : Activity() {
                     putExtra(CraftyBleService.EXTRA_COMMAND, raw)
                 }
                 runCatching {
-                    if (request.optString("action") == "connect" && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    val action = request.optString("action")
+                    val trackingEnabled = getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                        .getBoolean(CraftyBleService.KEY_BACKGROUND_TRACKING, true)
+                    val needsForeground = (action == "connect" && trackingEnabled) ||
+                        (action == "setBackgroundTracking" && request.optBoolean("enabled", false))
+                    if (needsForeground && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         ContextCompat.startForegroundService(this, intent)
                     } else {
                         startService(intent)

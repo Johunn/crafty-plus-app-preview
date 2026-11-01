@@ -66,106 +66,117 @@ export const CraftySettingsView: Component = () => {
             </ToggleGroupItem>
           </ToggleGroup>
         </SettingRow>
-        <SettingSlider
-          label={m.settings_deviceBrightness()}
-          valueLabel={`${state.ledBrightness} %`}
-          value={state.ledBrightness}
-          min={Limits.MIN_BRIGHTNESS}
-          max={Limits.MAX_BRIGHTNESS}
-          step={10}
-          onChange={actions.setLedBrightness}
-        />
-        {/* Auto shutdown - only on Crafty+ */}
-        <Show when={!isOldFirmware}>
+        <Show when={state.loaded}>
           <SettingSlider
-            label={m.settings_autoShutdownTime()}
-            valueLabel={
-              state.autoOffCountdown === null
-                ? "-"
-                : formatDuration(state.autoOffCountdown)
-            }
-            value={state.autoOffCountdown ?? Limits.MIN_AUTO_OFF}
-            min={Limits.MIN_AUTO_OFF}
-            max={Limits.MAX_AUTO_OFF}
-            step={30}
-            onChange={actions.setAutoOffCountdown}
+            label={m.settings_deviceBrightness()}
+            valueLabel={`${state.ledBrightness} %`}
+            value={state.ledBrightness}
+            min={Limits.MIN_BRIGHTNESS}
+            max={Limits.MAX_BRIGHTNESS}
+            step={10}
+            onChange={actions.setLedBrightness}
           />
+          {/* Auto shutdown - only on Crafty+ */}
+          <Show when={!isOldFirmware}>
+            <SettingSlider
+              label={m.settings_autoShutdownTime()}
+              valueLabel={
+                state.autoOffCountdown === null
+                  ? "-"
+                  : formatDuration(state.autoOffCountdown)
+              }
+              value={state.autoOffCountdown ?? Limits.MIN_AUTO_OFF}
+              min={Limits.MIN_AUTO_OFF}
+              max={Limits.MAX_AUTO_OFF}
+              step={30}
+              onChange={actions.setAutoOffCountdown}
+            />
+          </Show>
         </Show>
       </SettingsSection>
 
-      <SettingsSection title={m.settings_sectionBehavior()}>
-        <SettingSwitch
-          label={m.settings_vibration()}
-          description={m.settings_enableVibration()}
-          checked={derived.isVibrationOn()}
-          onChange={(enabled) =>
-            saveDeviceSetting(() => actions.setVibration(enabled))
-          }
-        />
-        <SettingSwitch
-          label={m.settings_chargeIndicatorLamp()}
-          description={m.settings_enableChargeLed()}
-          checked={derived.isChargeLedOn()}
-          onChange={(enabled) =>
-            saveDeviceSetting(() => actions.setChargeLed(enabled))
-          }
-        />
-        {/* Permanent Bluetooth - not on old firmware */}
-        <Show when={!isOldFirmware}>
+      <Show when={!state.loaded}>
+        <div class="rounded-card border border-dashed px-4 py-3 text-sm text-muted-foreground">
+          {m.settings_waitingDeviceRead()}
+        </div>
+      </Show>
+
+      <Show when={state.loaded}>
+        <SettingsSection title={m.settings_sectionBehavior()}>
           <SettingSwitch
-            label={m.settings_permanentBluetooth()}
-            description={m.settings_keepBluetoothAlwaysOn()}
-            checked={derived.isPermanentBluetooth()}
+            label={m.settings_vibration()}
+            description={m.settings_enableVibration()}
+            checked={derived.isVibrationOn()}
             onChange={(enabled) =>
-              saveDeviceSetting(() => actions.setPermanentBluetooth(enabled))
+              saveDeviceSetting(() => actions.setVibration(enabled))
             }
           />
-        </Show>
-      </SettingsSection>
-
-      <AppSettingsSection />
-
-      <SettingsSection title={m.device_info()}>
-        <InfoRow label={m.device_battery()}>{state.batteryLevel} %</InfoRow>
-        <InfoRow label={m.crafty_usageTime()}>
-          {state.useHours} h{!isOldFirmware && ` ${state.useMinutes ?? 0} min`}
-        </InfoRow>
-        <Show when={!isOldFirmware}>
-          <InfoRow label={m.crafty_autoOffRemaining()}>
-            {formatDuration(state.autoOffRemaining ?? 0)}
-          </InfoRow>
-        </Show>
-        <InfoRow label={m.device_firmware()}>{firmwareVersion}</InfoRow>
-        <Show when={!isOldFirmware}>
-          <InfoRow label={m.crafty_bleFirmware()}>
-            {state.bleFirmwareVersion ?? "-"}
-          </InfoRow>
-        </Show>
-        <InfoRow label={m.crafty_statusRegister2()}>
-          {state.statusRegister2}
-        </InfoRow>
-        {/* System status - only on Crafty+ */}
-        <Show when={!isOldFirmware}>
-          <InfoRow label={m.crafty_systemStatus()}>
-            {state.systemStatus ?? "-"}
-          </InfoRow>
-          <InfoRow label={m.crafty_batteryStatus({ number: 1 })}>
-            {state.akkuStatus ?? "-"}
-          </InfoRow>
-          <InfoRow label={m.crafty_batteryStatus({ number: 2 })}>
-            {state.akkuStatus2 ?? "-"}
-          </InfoRow>
-        </Show>
-      </SettingsSection>
-
-      {/* Analysis and factory reset - not on old firmware */}
-      <Show when={!isOldFirmware}>
-        <SettingsSection title={m.settings_sectionInfo()}>
-          <AnalysisSection run={actions.runAnalysis} />
+          <SettingSwitch
+            label={m.settings_chargeIndicatorLamp()}
+            description={m.settings_enableChargeLed()}
+            checked={derived.isChargeLedOn()}
+            onChange={(enabled) =>
+              saveDeviceSetting(() => actions.setChargeLed(enabled))
+            }
+          />
+          {/* Permanent Bluetooth - not on old firmware */}
+          <Show when={!isOldFirmware}>
+            <SettingSwitch
+              label={m.settings_permanentBluetooth()}
+              description={m.settings_keepBluetoothAlwaysOn()}
+              checked={derived.isPermanentBluetooth()}
+              onChange={(enabled) =>
+                saveDeviceSetting(() => actions.setPermanentBluetooth(enabled))
+              }
+            />
+          </Show>
         </SettingsSection>
-        <SettingsSection title={m.settings_sectionDanger()}>
-          <FactoryReset onReset={actions.factoryReset} />
+
+        <AppSettingsSection />
+
+        <SettingsSection title={m.device_info()}>
+          <InfoRow label={m.device_battery()}>{state.batteryLevel} %</InfoRow>
+          <InfoRow label={m.crafty_usageTime()}>
+            {state.useHours} h
+            {!isOldFirmware && ` ${state.useMinutes ?? 0} min`}
+          </InfoRow>
+          <Show when={!isOldFirmware}>
+            <InfoRow label={m.crafty_autoOffRemaining()}>
+              {formatDuration(state.autoOffRemaining ?? 0)}
+            </InfoRow>
+          </Show>
+          <InfoRow label={m.device_firmware()}>{firmwareVersion}</InfoRow>
+          <Show when={!isOldFirmware}>
+            <InfoRow label={m.crafty_bleFirmware()}>
+              {state.bleFirmwareVersion ?? "-"}
+            </InfoRow>
+          </Show>
+          <InfoRow label={m.crafty_statusRegister2()}>
+            {state.statusRegister2}
+          </InfoRow>
+          {/* System status - only on Crafty+ */}
+          <Show when={!isOldFirmware}>
+            <InfoRow label={m.crafty_systemStatus()}>
+              {state.systemStatus ?? "-"}
+            </InfoRow>
+            <InfoRow label={m.crafty_batteryStatus({ number: 1 })}>
+              {state.akkuStatus ?? "-"}
+            </InfoRow>
+            <InfoRow label={m.crafty_batteryStatus({ number: 2 })}>
+              {state.akkuStatus2 ?? "-"}
+            </InfoRow>
+          </Show>
         </SettingsSection>
+
+        {/* Analysis and factory reset - not on old firmware */}
+        <Show when={!isOldFirmware}>
+          <SettingsSection title={m.settings_sectionInfo()}>
+            <AnalysisSection run={actions.runAnalysis} />
+          </SettingsSection>
+          <SettingsSection title={m.settings_sectionDanger()}>
+            <FactoryReset onReset={actions.factoryReset} />
+          </SettingsSection>
+        </Show>
       </Show>
     </>
   );

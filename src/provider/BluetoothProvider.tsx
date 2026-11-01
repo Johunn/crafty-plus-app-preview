@@ -81,6 +81,7 @@ const SEARCH_TIMEOUT_MS = 8_000;
 const DIRECT_CONNECT_BUDGET_MS = 3_500;
 /** A GATT connect that takes longer has failed */
 const CONNECT_TIMEOUT_MS = 8_000;
+const NATIVE_CONNECT_TIMEOUT_MS = 30_000;
 /** Pause before retrying a refused connect */
 const RETRY_PAUSE_MS = 300;
 
@@ -375,7 +376,9 @@ const createBluetoothMethods = (usage: ConnectionUsageRecorder) => {
   const connectToDevice = async (
     bluetoothDevice: BluetoothDevice,
     token: number,
-    timeoutMs = CONNECT_TIMEOUT_MS
+    timeoutMs = isNativeAndroidBluetooth()
+      ? NATIVE_CONNECT_TIMEOUT_MS
+      : CONNECT_TIMEOUT_MS
   ) => {
     if (!bluetoothDevice.gatt) {
       throw new Error("Device does not support GATT");
