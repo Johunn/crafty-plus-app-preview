@@ -140,10 +140,10 @@ class CraftyBleService : Service() {
                     CraftyBleEvents.failure(id, "Choisis d’abord le CRAFTY+", "NotFoundError")
                     return
                 }
-                trackingEnabled = true
+                trackingEnabled = preferences.getBoolean(KEY_BACKGROUND_TRACKING, true)
                 deviceAddress = address
-                preferences.edit().putBoolean(KEY_TRACKING, true).putString(KEY_ADDRESS, address).apply()
-                startForegroundIfNeeded()
+                preferences.edit().putBoolean(KEY_TRACKING, trackingEnabled).putString(KEY_ADDRESS, address).apply()
+                if (trackingEnabled) startForegroundIfNeeded()
                 if (connected && gatt?.device?.address == address) CraftyBleEvents.response(id, true)
                 else {
                     pendingConnectId = id
@@ -153,6 +153,30 @@ class CraftyBleService : Service() {
             "disconnect" -> {
                 CraftyBleEvents.response(id, true)
                 stopTracking()
+            }
+            "setBackgroundTracking" -> {
+                val enabled = command.optBoolean("enabled", false)
+                preferences.edit().putBoolean(KEY_BACKGROUND_TRACKING, enabled)
+                    .putBoolean(KEY_TRACKING, enabled).commit()
+                trackingEnabled = enabled
+                if (enabled) {
+                    deviceAddress = preferences.getString(KEY_ADDRESS, deviceAddress)
+                    startForegroundIfNeeded()
+                    if (!connected) connectSavedDevice(id)
+                    else {
+                        if (cycleId == null) {
+                            val now = System.currentTimeMillis()
+                            cycleId = database.startCycle("CRAFTY+", now)
+                            database.touchCycle(cycleId!!, now)
+                        }
+                        CraftyBleEvents.response(id, true)
+                    }
+                } else {
+                    endTrackedRecords()
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                    isForeground = false
+                    CraftyBleEvents.response(id, true)
+                }
             }
             "hasService" -> {
                 val uuid = command.optString("serviceUuid").lowercase()
@@ -246,14 +270,14 @@ class CraftyBleService : Service() {
             }
             connected = true
             reconnectAttempt = 0
-            cycleId = database.startCycle("CRAFTY+", System.currentTimeMillis())
+            if (trackingEnabled) cycleId = database.startCycle("CRAFTY+", System.currentTimeMillis())
             CraftyBleEvents.emit(
                 JSONObject().put("kind", "connection").put("state", "connected")
                     .put("deviceId", gatt.device.address)
             )
             pendingConnectId?.let { CraftyBleEvents.response(it, true) }
             pendingConnectId = null
-            updateOngoingNotification(null, "Connecté · suivi actif")
+            if (trackingEnabled) updateOngoingNotification(null, "Connecté · suivi actif")
             enableInternalNotifications()
             handler.removeCallbacks(pollTemperature)
             handler.postDelayed(pollTemperature, POLL_INTERVAL_MS)
@@ -331,7 +355,7 @@ class CraftyBleService : Service() {
     }
 
     private fun recordTemperature(temp: Int, at: Long) {
-        if (!connected) return
+        if (!connected || !trackingEnabled) return
         cycleId?.let { database.touchCycle(it, at) }
         if (temp > HOT_THRESHOLD_C) {
             coolingStartedAt = null
@@ -483,6 +507,7 @@ class CraftyBleService : Service() {
     }
 
     private fun updateOngoingNotification(temp: Int?, message: String?) {
+        if (!trackingEnabled || !isForeground) return
         val text = message ?: temp?.let { "Température $it °C · suivi actif" } ?: "Suivi CRAFTY+ actif"
         val open = PendingIntent.getActivity(
             this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -591,10 +616,7 @@ class CraftyBleService : Service() {
         handler.removeCallbacks(endAfterCooling)
         connected = false
         val now = System.currentTimeMillis()
-        cycleId?.let { database.endCycle(it, now, estimated = false) }
-        consumptionSessionId?.let { database.endSession(it, now, estimated = false) }
-        cycleId = null
-        consumptionSessionId = null
+        endTrackedRecords()
         runCatching { gatt?.disconnect() }
         runCatching { gatt?.close() }
         gatt = null
@@ -603,6 +625,23 @@ class CraftyBleService : Service() {
         stopForeground(STOP_FOREGROUND_REMOVE)
         isForeground = false
         stopSelf()
+    }
+
+    private fun endTrackedRecords() {
+        val now = System.currentTimeMillis()
+        cycleId?.let { database.endCycle(it, now, estimated = false) }
+        consumptionSessionId?.let { database.endSession(it, now, estimated = false) }
+        cycleId = null
+        consumptionSessionId = null
+        candidateStartedAt = null
+        coolingStartedAt = null
+        handler.removeCallbacks(qualifyCandidate)
+        handler.removeCallbacks(endAfterCooling)
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        if (!preferences.getBoolean(KEY_BACKGROUND_TRACKING, true)) stopTracking()
+        super.onTaskRemoved(rootIntent)
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -629,6 +668,7 @@ class CraftyBleService : Service() {
         private const val KEY_TRACKING = "tracking-enabled"
         private const val KEY_ADDRESS = "device-address"
         const val KEY_BATTERY_ALERTS = "battery-alerts-enabled"
+        const val KEY_BACKGROUND_TRACKING = "background-tracking-enabled"
         private const val KEY_LAST_BATTERY_LEVEL = "last-battery-level"
         private const val TRACKING_CHANNEL = "crafty-tracking"
         private const val LOW_BATTERY_CHANNEL = "crafty-low-battery"

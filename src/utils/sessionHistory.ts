@@ -7,6 +7,7 @@ export interface SessionReading {
   heating: boolean;
   reached: boolean;
   pumping: boolean;
+  batteryLevel?: number | null;
 }
 
 /** A session that is still being recorded */
@@ -20,6 +21,9 @@ export interface ActiveSession {
   lastSampleAt: number;
   /** [time in ms, °C] */
   samples: [number, number][];
+  batteryStart?: number | null;
+  batteryEnd?: number | null;
+  batteryMin?: number | null;
 }
 
 /** A finished heater session as it is stored */
@@ -36,6 +40,9 @@ export interface Session {
   pumpCycles: number;
   /** [seconds since start, °C] */
   samples: [number, number][];
+  batteryStart?: number | null;
+  batteryEnd?: number | null;
+  batteryMin?: number | null;
 }
 
 export const SAMPLE_INTERVAL_MS = 5_000;
@@ -68,6 +75,9 @@ export const startSession = (reading: SessionReading): ActiveSession => ({
   wasPumping: reading.pumping,
   lastSampleAt: reading.time,
   samples: isPlausibleTemp(reading.temp) ? [[reading.time, reading.temp]] : [],
+  batteryStart: reading.batteryLevel ?? null,
+  batteryEnd: reading.batteryLevel ?? null,
+  batteryMin: reading.batteryLevel ?? null,
 });
 
 export const updateSession = (
@@ -92,6 +102,13 @@ export const updateSession = (
       takeSample && isPlausibleTemp(temp)
         ? [...session.samples, [reading.time, temp]]
         : session.samples,
+    batteryEnd: reading.batteryLevel ?? session.batteryEnd,
+    batteryMin:
+      reading.batteryLevel == null
+        ? session.batteryMin
+        : session.batteryMin == null
+          ? reading.batteryLevel
+          : Math.min(session.batteryMin, reading.batteryLevel),
   };
 };
 
@@ -126,6 +143,9 @@ export const finishSession = (
         ? null
         : Math.round((session.reachedAt - session.startedAt) / 1000),
     pumpCycles: session.pumpCycles,
+    batteryStart: session.batteryStart,
+    batteryEnd: session.batteryEnd,
+    batteryMin: session.batteryMin,
     samples: downsample(session.samples, MAX_SESSION_POINTS).map(
       ([time, temp]) => [Math.round((time - session.startedAt) / 1000), temp]
     ),

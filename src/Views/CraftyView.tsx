@@ -1,6 +1,7 @@
 import { A, type RouteSectionProps, useNavigate } from "@solidjs/router";
 import Activity from "lucide-solid/icons/activity";
 import ArrowRight from "lucide-solid/icons/arrow-right";
+import Battery from "lucide-solid/icons/battery";
 import ChevronRight from "lucide-solid/icons/chevron-right";
 import MapPin from "lucide-solid/icons/map-pin";
 import Minus from "lucide-solid/icons/minus";
@@ -16,6 +17,7 @@ import {
   createSignal,
   type JSX,
   onCleanup,
+  onMount,
   Show,
   untrack,
 } from "solid-js";
@@ -31,6 +33,10 @@ import { CraftyProvider, useCrafty } from "../provider/CraftyProvider";
 import { LiveSessionProvider } from "../provider/LiveSessionProvider";
 import { buildRoute } from "../routes";
 import { isNativeAndroidBluetooth } from "../utils/androidBluetooth";
+import {
+  backgroundTrackingEnabled,
+  loadBackgroundTrackingPreference,
+} from "../utils/backgroundTracking";
 import {
   countConsumptionSessionsBetween,
   ESTIMATED_GRAMS_PER_SESSION,
@@ -49,7 +55,10 @@ export const CraftyView: Component = () => {
 
   return (
     <>
-      <CraftyConsumptionSummary />
+      <CraftyBatteryCard />
+      <Show when={!isNativeAndroidBluetooth() || backgroundTrackingEnabled()}>
+        <CraftyConsumptionSummary />
+      </Show>
       <ShutdownTime />
       <Temperature />
       {/* Find My Device - only Crafty+ */}
@@ -73,6 +82,52 @@ export const CraftyView: Component = () => {
         </button>
       </Show>
     </>
+  );
+};
+
+const CraftyBatteryCard = () => {
+  const { state, derived } = useCrafty();
+  const level = () =>
+    state.loaded ? Math.max(0, Math.min(100, state.batteryLevel)) : undefined;
+  return (
+    <section
+      class="rounded-card border bg-card p-4"
+      aria-label={m.device_battery()}
+    >
+      <div class="flex items-center gap-3">
+        <div class="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+          <Battery class="size-6" />
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-baseline justify-between gap-3">
+            <h2 class="font-semibold text-sm">{m.device_battery()}</h2>
+            <span class="font-semibold text-2xl tabular-nums">
+              {level() === undefined ? "–" : `${level()} %`}
+            </span>
+          </div>
+          <div class="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              class="h-full rounded-full bg-primary transition-[width]"
+              style={{ width: `${level() ?? 0}%` }}
+            />
+          </div>
+        </div>
+      </div>
+      <div class="mt-3 grid grid-cols-2 gap-3 border-t pt-3 text-xs">
+        <div class="flex flex-col gap-0.5">
+          <span class="text-muted-foreground">{m.temperature_now()}</span>
+          <span class="font-medium tabular-nums">
+            {state.loaded ? `${state.currentTemp} °C` : "–"}
+          </span>
+        </div>
+        <div class="flex flex-col gap-0.5 text-right">
+          <span class="text-muted-foreground">{m.temperature_target()}</span>
+          <span class="font-medium tabular-nums">
+            {state.loaded ? `${derived.effectiveTargetTemp()} °C` : "–"}
+          </span>
+        </div>
+      </div>
+    </section>
   );
 };
 
@@ -228,6 +283,7 @@ const CraftyLiveSession = (props: { children: JSX.Element }) => {
           target: derived.effectiveTargetTemp(),
           heating: derived.isHeaterActive(),
           reached: derived.isHeaterActive() && derived.isSetpointReached(),
+          batteryLevel: state.batteryLevel,
           ready: state.loaded,
         })}
       >
@@ -336,6 +392,9 @@ const CraftyConsumptionTracker = () => {
 export const CraftyShell = (props: RouteSectionProps) => {
   const navigate = useNavigate();
   const { connectionState } = useBluetooth();
+  onMount(() => {
+    void loadBackgroundTrackingPreference().catch(() => {});
+  });
 
   // Redirect to connect page if not connected (the provider renders nothing
   // without a connected device, so this must live outside of it)
@@ -355,7 +414,7 @@ export const CraftyShell = (props: RouteSectionProps) => {
       <CraftyLiveSession>
         <DeviceShell
           headerTrailing={<CraftyBattery />}
-          tabs={[
+          tabs={() => [
             {
               href: buildRoute.craftyRoot(),
               label: m.nav_control(),
@@ -366,11 +425,15 @@ export const CraftyShell = (props: RouteSectionProps) => {
               label: m.nav_history(),
               icon: History,
             },
-            {
-              href: buildRoute.usage(),
-              label: m.nav_usage(),
-              icon: Activity,
-            },
+            ...(!isNativeAndroidBluetooth() || backgroundTrackingEnabled()
+              ? [
+                  {
+                    href: buildRoute.usage(),
+                    label: m.nav_usage(),
+                    icon: Activity,
+                  },
+                ]
+              : []),
             {
               href: buildRoute.craftySettings(),
               label: m.settings_title(),

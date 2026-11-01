@@ -1,5 +1,5 @@
 import { A, useMatch } from "@solidjs/router";
-import { type Component, For, type JSX } from "solid-js";
+import { type Accessor, type Component, For, type JSX } from "solid-js";
 import { cn } from "../lib/utils";
 import { AppHeader } from "./AppHeader";
 
@@ -32,13 +32,15 @@ const NavTabLink = (props: { tab: NavTab }) => {
 };
 
 interface DeviceShellProps {
-  tabs: NavTab[];
+  tabs: NavTab[] | Accessor<NavTab[]>;
   headerTrailing?: JSX.Element;
   children: JSX.Element;
 }
 
 /** Page frame of a connected device: header, content and tab bar */
 export const DeviceShell = (props: DeviceShellProps) => {
+  const tabs = () =>
+    typeof props.tabs === "function" ? props.tabs() : props.tabs;
   return (
     <div class="mx-auto flex min-h-dvh w-full max-w-lg flex-col px-5 pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
       <AppHeader trailing={props.headerTrailing} />
@@ -47,10 +49,10 @@ export const DeviceShell = (props: DeviceShellProps) => {
         <div
           class="mx-auto grid max-w-lg px-3 pt-2 pb-2.5"
           style={{
-            "grid-template-columns": `repeat(${props.tabs.length}, minmax(0, 1fr))`,
+            "grid-template-columns": `repeat(${tabs().length}, minmax(0, 1fr))`,
           }}
         >
-          <For each={props.tabs}>{(tab) => <NavTabLink tab={tab} />}</For>
+          <For each={tabs()}>{(tab) => <NavTabLink tab={tab} />}</For>
         </div>
       </nav>
     </div>

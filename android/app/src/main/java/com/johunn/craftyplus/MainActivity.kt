@@ -99,6 +99,15 @@ class MainActivity : Activity() {
         }
     }
 
+    override fun onStop() {
+        if (::webView.isInitialized &&
+            !getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getBoolean(CraftyBleService.KEY_BACKGROUND_TRACKING, true)) {
+            startService(Intent(this, CraftyBleService::class.java).setAction(CraftyBleService.ACTION_STOP))
+        }
+        super.onStop()
+    }
+
     @Deprecated("Deprecated in Android, kept for WebView chooser compatibility")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -170,6 +179,34 @@ class MainActivity : Activity() {
                     .getBoolean(CraftyBleService.KEY_BATTERY_ALERTS, false)
             )
             "setBatteryAlerts" -> setBatteryAlerts(id, request.optBoolean("enabled", false))
+            "getBackgroundTracking" -> CraftyBleEvents.response(
+                id,
+                getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                    .getBoolean(CraftyBleService.KEY_BACKGROUND_TRACKING, true)
+            )
+            "setBackgroundTracking" -> {
+                val enabled = request.optBoolean("enabled", false)
+                val saved = getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+                    .putBoolean(CraftyBleService.KEY_BACKGROUND_TRACKING, enabled)
+                    .commit()
+                if (!saved) {
+                    CraftyBleEvents.failure(id, "Impossible d’enregistrer le réglage du suivi")
+                    return
+                }
+                val intent = Intent(this, CraftyBleService::class.java).apply {
+                    action = CraftyBleService.ACTION_COMMAND
+                    putExtra(
+                        CraftyBleService.EXTRA_COMMAND,
+                        JSONObject().put("action", "setBackgroundTracking")
+                            .put("id", id).put("enabled", enabled).toString()
+                    )
+                }
+                runCatching {
+                    if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                        ContextCompat.startForegroundService(this, intent)
+                    else startService(intent)
+                }.onFailure { CraftyBleEvents.failure(id, it.message ?: "Réglage du suivi impossible") }
+            }
             "saveBackup" -> saveBackup(request.optString("json"))
             else -> {
                 val intent = Intent(this, CraftyBleService::class.java).apply {

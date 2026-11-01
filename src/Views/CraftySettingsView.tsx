@@ -16,9 +16,11 @@ import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
 import { Limits } from "../devices/crafty/protocol";
 import { m } from "../paraglide/messages";
 import { useCrafty } from "../provider/CraftyProvider";
+import { useToast } from "../provider/ToastProvider";
 import { formatDuration } from "../utils/heatProgress";
 
 export const CraftySettingsView: Component = () => {
+  const showToast = useToast();
   const {
     state,
     actions,
@@ -28,6 +30,12 @@ export const CraftySettingsView: Component = () => {
     temperatureUnit,
     setTemperatureUnit,
   } = useCrafty();
+
+  const saveDeviceSetting = (action: () => Promise<void>) => {
+    void action().catch(() =>
+      showToast({ message: m.settings_deviceSettingSaveFailed() })
+    );
+  };
 
   return (
     <>
@@ -48,9 +56,7 @@ export const CraftySettingsView: Component = () => {
           <ToggleGroup
             aria-label={m.settings_temperatureUnit()}
             value={temperatureUnit()}
-            onChange={(unit) =>
-              unit && setTemperatureUnit(unit as "C" | "F")
-            }
+            onChange={(unit) => unit && setTemperatureUnit(unit as "C" | "F")}
           >
             <ToggleGroupItem value="C" aria-label={m.settings_celsius()}>
               °C
@@ -92,13 +98,17 @@ export const CraftySettingsView: Component = () => {
           label={m.settings_vibration()}
           description={m.settings_enableVibration()}
           checked={derived.isVibrationOn()}
-          onChange={actions.setVibration}
+          onChange={(enabled) =>
+            saveDeviceSetting(() => actions.setVibration(enabled))
+          }
         />
         <SettingSwitch
           label={m.settings_chargeIndicatorLamp()}
           description={m.settings_enableChargeLed()}
           checked={derived.isChargeLedOn()}
-          onChange={actions.setChargeLed}
+          onChange={(enabled) =>
+            saveDeviceSetting(() => actions.setChargeLed(enabled))
+          }
         />
         {/* Permanent Bluetooth - not on old firmware */}
         <Show when={!isOldFirmware}>
@@ -106,7 +116,9 @@ export const CraftySettingsView: Component = () => {
             label={m.settings_permanentBluetooth()}
             description={m.settings_keepBluetoothAlwaysOn()}
             checked={derived.isPermanentBluetooth()}
-            onChange={actions.setPermanentBluetooth}
+            onChange={(enabled) =>
+              saveDeviceSetting(() => actions.setPermanentBluetooth(enabled))
+            }
           />
         </Show>
       </SettingsSection>

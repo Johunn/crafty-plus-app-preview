@@ -36,6 +36,7 @@ export interface LiveReading {
   ready: boolean;
   /** The unit the device shows; °C if unset */
   isCelsius?: boolean;
+  batteryLevel?: number;
 }
 
 export const LIVE_WINDOW_MS = 10 * 60 * 1000;
@@ -117,6 +118,7 @@ export const LiveSessionProvider = (props: {
       heating: reading.heating,
       reached: reading.reached,
       pumping: reading.pumping ?? false,
+      batteryLevel: reading.batteryLevel,
     };
     if (reading.heating) {
       active = active

@@ -18,6 +18,10 @@ import {
 } from "../utils/androidBluetooth";
 import { createAppBackup, restoreAppBackup } from "../utils/appBackup";
 import {
+  loadBackgroundTrackingPreference,
+  updateBackgroundTrackingPreference,
+} from "../utils/backgroundTracking";
+import {
   getLowBatteryNotifyPreference,
   getLowBatteryNotifyPreferenceSetting,
   getNotifyPreference,
@@ -51,6 +55,7 @@ export const AppSettingsSection = () => {
       : getLowBatteryNotifyPreference()
   );
   const [sound, setSound] = createSignal(getSoundPreference());
+  const [backgroundTracking, setBackgroundTracking] = createSignal(true);
   let backupInput!: HTMLInputElement;
 
   onMount(() => {
@@ -58,8 +63,21 @@ export const AppSettingsSection = () => {
       void getNativeBatteryAlerts()
         .then(setNotifyLowBattery)
         .catch(() => {});
+      void loadBackgroundTrackingPreference()
+        .then(setBackgroundTracking)
+        .catch(() => {});
     }
   });
+
+  const toggleBackgroundTracking = async (enabled: boolean) => {
+    try {
+      const saved = await updateBackgroundTrackingPreference(enabled);
+      setBackgroundTracking(saved);
+    } catch (error) {
+      console.error("Saving the background tracking preference failed:", error);
+      showToast({ message: m.settings_backgroundTrackingSaveFailed() });
+    }
+  };
 
   const toggleNotify = async (enabled: boolean) => {
     const effective = await setNotifyPreference(enabled);
@@ -202,16 +220,12 @@ export const AppSettingsSection = () => {
         }}
       />
       <Show when={isNativeAndroidBluetooth()}>
-        <div class="border-t px-4 py-3.5">
-          <div class="flex flex-col gap-1">
-            <span class="font-medium text-sm">
-              {m.settings_backgroundTrackingTitle()}
-            </span>
-            <span class="text-muted-foreground text-xs leading-relaxed">
-              {m.settings_backgroundTrackingHint()}
-            </span>
-          </div>
-        </div>
+        <SettingSwitch
+          label={m.settings_backgroundTrackingTitle()}
+          description={m.settings_backgroundTrackingHint()}
+          checked={backgroundTracking()}
+          onChange={toggleBackgroundTracking}
+        />
       </Show>
       <div class="flex flex-col gap-2 border-t px-4 py-3.5">
         <div class="flex flex-col gap-1">

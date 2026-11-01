@@ -1,11 +1,20 @@
+import { useNavigate } from "@solidjs/router";
 import Activity from "lucide-solid/icons/activity";
 import Download from "lucide-solid/icons/download";
-import History from "lucide-solid/icons/rotate-ccw-clock";
 import RotateCcw from "lucide-solid/icons/rotate-ccw";
+import History from "lucide-solid/icons/rotate-ccw-clock";
 import SlidersHorizontal from "lucide-solid/icons/sliders-horizontal";
 import Thermometer from "lucide-solid/icons/thermometer";
-import { createMemo, createSignal, For, onCleanup, Show } from "solid-js";
-import { DeviceShell, PageTitle, type NavTab } from "../components/DeviceShell";
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  For,
+  onCleanup,
+  onMount,
+  Show,
+} from "solid-js";
+import { DeviceShell, type NavTab, PageTitle } from "../components/DeviceShell";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -21,14 +30,19 @@ import { m } from "../paraglide/messages";
 import { getLocale } from "../paraglide/runtime";
 import { useConnectionUsage } from "../provider/ConnectionUsageProvider";
 import { buildRoute } from "../routes";
+import { isNativeAndroidBluetooth } from "../utils/androidBluetooth";
+import {
+  backgroundTrackingEnabled,
+  loadBackgroundTrackingPreference,
+} from "../utils/backgroundTracking";
 import {
   type ConsumptionSession,
-  ESTIMATED_GRAMS_PER_SESSION,
-  TRACKING_REST_MS,
-  consumptionSessionsToCsv,
   connectionCyclesToCsv,
+  consumptionSessionsToCsv,
   countConsumptionSessionsBetween,
+  ESTIMATED_GRAMS_PER_SESSION,
   localDayKey,
+  TRACKING_REST_MS,
 } from "../utils/connectionUsage";
 
 const formatTime = (time: number) =>
@@ -138,7 +152,16 @@ const tabs: NavTab[] = [
 ];
 
 export const ConnectionUsageView = () => {
+  const navigate = useNavigate();
   const usage = useConnectionUsage();
+  onMount(() => {
+    void loadBackgroundTrackingPreference().catch(() => {});
+  });
+  createEffect(() => {
+    if (isNativeAndroidBluetooth() && !backgroundTrackingEnabled()) {
+      navigate(buildRoute.craftyRoot(), { replace: true });
+    }
+  });
   const [now, setNow] = createSignal(Date.now());
   const [confirmReset, setConfirmReset] = createSignal(false);
   const timer = setInterval(() => setNow(Date.now()), 1000);

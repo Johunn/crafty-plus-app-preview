@@ -91,9 +91,14 @@ export const createCraftyStore = (
 
   // Show the change right away; the read-back confirms it
   const setStatusRegister2Bit = (bit: number, set: boolean, action: string) => {
-    const value = withBit(state.statusRegister2, bit, set);
+    const previous = state.statusRegister2;
+    const value = withBit(previous, bit, set);
     setState("statusRegister2", value);
-    return driver.setStatusRegister2(value).catch(logError(action));
+    return driver.setStatusRegister2(value).catch((error) => {
+      setState("statusRegister2", previous);
+      logError(action)(error);
+      throw error;
+    });
   };
 
   const actions = {

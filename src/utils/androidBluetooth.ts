@@ -326,6 +326,14 @@ class NativeBluetooth extends EventTarget {
     return this.request<boolean>({ action: "getBatteryAlerts" });
   }
 
+  getBackgroundTracking() {
+    return this.request<boolean>({ action: "getBackgroundTracking" });
+  }
+
+  setBackgroundTracking(enabled: boolean) {
+    return this.request<boolean>({ action: "setBackgroundTracking", enabled });
+  }
+
   setBatteryAlerts(enabled: boolean) {
     return this.request<boolean>({ action: "setBatteryAlerts", enabled });
   }
@@ -374,6 +382,12 @@ export const getNativeBatteryAlerts = () =>
 
 export const setNativeBatteryAlerts = (enabled: boolean) =>
   nativeBluetooth?.setBatteryAlerts(enabled) ?? Promise.resolve(false);
+
+export const getNativeBackgroundTracking = () =>
+  nativeBluetooth?.getBackgroundTracking() ?? Promise.resolve(false);
+
+export const setNativeBackgroundTracking = (enabled: boolean) =>
+  nativeBluetooth?.setBackgroundTracking(enabled) ?? Promise.resolve(false);
 
 export const NATIVE_RESUME_EVENT = "crafty-android-resume";
 export const NATIVE_RECONNECTED_EVENT = "crafty-android-reconnected";

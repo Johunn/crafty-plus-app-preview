@@ -121,6 +121,10 @@ const StatTile = (props: { label: string; children: JSX.Element }) => (
 
 const SessionRow = (props: { session: Session }) => {
   const formatTemp = useTemperatureFormat();
+  const lowestTemp = () =>
+    props.session.samples.length
+      ? Math.min(...props.session.samples.map(([, temp]) => temp))
+      : null;
   return (
     <li class="flex items-center gap-3 px-4 py-3">
       <div class="flex min-w-0 flex-1 flex-col gap-1">
@@ -137,6 +141,28 @@ const SessionRow = (props: { session: Session }) => {
           {formatTemp(props.session.maxTarget)}
         </div>
         <div class="flex flex-wrap gap-x-2 text-muted-foreground text-xs tabular-nums">
+          <Show
+            when={
+              props.session.batteryStart != null ||
+              props.session.batteryEnd != null
+            }
+          >
+            <span>
+              {m.history_batteryRange({
+                start: props.session.batteryStart ?? "–",
+                end: props.session.batteryEnd ?? "–",
+                minimum: props.session.batteryMin ?? "–",
+              })}
+            </span>
+          </Show>
+          <Show when={lowestTemp() !== null && props.session.peakTemp !== null}>
+            <span>
+              {m.history_temperatureRange({
+                minimum: formatTemp(lowestTemp() ?? 0),
+                maximum: formatTemp(props.session.peakTemp ?? 0),
+              })}
+            </span>
+          </Show>
           <Show when={props.session.heatUpSeconds !== null}>
             <span>
               {m.history_heatUp({
