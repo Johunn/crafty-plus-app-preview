@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const PAGES_BASE = "/reactive-volcano-app/";
+const PAGES_BASE = "/crafty-plus-app-preview/";
 
 export default defineConfig({
   testDir: "./e2e",

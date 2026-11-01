@@ -492,12 +492,25 @@ class CraftyBleService : Service() {
         "${serviceUuid.lowercase()}:${characteristicUuid.lowercase()}"
 
     private fun maybeAlertLowBattery(battery: Int) {
-        if (!preferences.getBoolean(KEY_BATTERY_ALERTS, false) || battery > LOW_BATTERY_THRESHOLD) return
+        if (battery !in 0..100) return
+
+        val previous = preferences.getInt(KEY_LAST_BATTERY_LEVEL, 100)
+        val wasAlerted = if (preferences.contains(KEY_LOW_BATTERY_ALERTED)) {
+            preferences.getBoolean(KEY_LOW_BATTERY_ALERTED, false)
+        } else {
+            previous <= LOW_BATTERY_THRESHOLD
+        }
+        val alertsEnabled = preferences.getBoolean(KEY_BATTERY_ALERTS, false)
+        if (battery > LOW_BATTERY_THRESHOLD) {
+            preferences.edit()
+                .putInt(KEY_LAST_BATTERY_LEVEL, battery)
+                .putBoolean(KEY_LOW_BATTERY_ALERTED, false)
+                .apply()
+            return
+        }
+        if (!alertsEnabled || wasAlerted) return
         if (Build.VERSION.SDK_INT >= 33 &&
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) return
-        val previous = preferences.getInt(KEY_LAST_BATTERY_LEVEL, 100)
-        preferences.edit().putInt(KEY_LAST_BATTERY_LEVEL, battery).apply()
-        if (previous <= LOW_BATTERY_THRESHOLD) return
         val notification = NotificationCompat.Builder(this, LOW_BATTERY_CHANNEL)
             .setSmallIcon(android.R.drawable.stat_sys_warning)
             .setContentTitle("Batterie faible · CRAFTY+")
@@ -505,7 +518,14 @@ class CraftyBleService : Service() {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .build()
-        runCatching { (getSystemService(NOTIFICATION_SERVICE) as NotificationManager).notify(LOW_BATTERY_NOTIFICATION, notification) }
+        runCatching {
+            (getSystemService(NOTIFICATION_SERVICE) as NotificationManager)
+                .notify(LOW_BATTERY_NOTIFICATION, notification)
+            preferences.edit()
+                .putInt(KEY_LAST_BATTERY_LEVEL, battery)
+                .putBoolean(KEY_LOW_BATTERY_ALERTED, true)
+                .commit()
+        }
     }
 
     private fun updateOngoingNotification(temp: Int?, message: String?) {
@@ -680,6 +700,7 @@ class CraftyBleService : Service() {
         const val KEY_BATTERY_ALERTS = "battery-alerts-enabled"
         const val KEY_BACKGROUND_TRACKING = "background-tracking-enabled"
         private const val KEY_LAST_BATTERY_LEVEL = "last-battery-level"
+        private const val KEY_LOW_BATTERY_ALERTED = "low-battery-alerted"
         private const val TRACKING_CHANNEL = "crafty-tracking"
         private const val LOW_BATTERY_CHANNEL = "crafty-low-battery"
         private const val TRACKING_NOTIFICATION = 4201

@@ -39,8 +39,8 @@ const HistoryView = page(history, "HistoryView");
 const ConnectionUsageView = page(connectionUsage, "ConnectionUsageView");
 
 export const Routes = () => {
-  // Vite's BASE_URL has a trailing slash ("/reactive-volcano-app/"), which the
-  // router would turn into "//connect" and then fail to match any route.
+  // Vite's BASE_URL has a trailing slash ("/crafty-plus-app-preview/"), which
+  // the router would turn into "//connect" and then fail to match any route.
   const base = import.meta.env.BASE_URL.replace(/\/+$/, "");
 
   // The Android WebView opens the packaged entry file explicitly. Normalize

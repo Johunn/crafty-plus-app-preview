@@ -850,7 +850,10 @@ export async function mockBluetooth(
         },
         getAvailability: async () => true,
       };
-      Object.assign(window.navigator, { bluetooth });
+      Object.defineProperty(window.navigator, "bluetooth", {
+        configurable: true,
+        value: bluetooth,
+      });
 
       console.log(
         `[Bluetooth Mock] Initialized with device type: ${deviceType}`

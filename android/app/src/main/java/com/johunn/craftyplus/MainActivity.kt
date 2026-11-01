@@ -21,6 +21,7 @@ import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -28,6 +29,7 @@ import androidx.webkit.WebViewAssetLoader
 import androidx.webkit.WebViewClientCompat
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.ByteArrayInputStream
 import java.io.OutputStreamWriter
 import java.util.concurrent.ConcurrentHashMap
 
@@ -56,10 +58,34 @@ class MainActivity : Activity() {
         webView.settings.domStorageEnabled = true
         webView.settings.allowFileAccess = false
         webView.settings.allowContentAccess = false
+        webView.settings.javaScriptCanOpenWindowsAutomatically = false
+        webView.settings.setSupportMultipleWindows(false)
         webView.addJavascriptInterface(NativeBridge(this), "CraftyAndroidBle")
         webView.webViewClient = object : WebViewClientCompat() {
-            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest) =
-                assetLoader.shouldInterceptRequest(request.url)
+            override fun shouldInterceptRequest(
+                view: WebView,
+                request: WebResourceRequest
+            ): WebResourceResponse? {
+                if (!isPackagedAppUrl(request.url)) {
+                    return blockedWebResource()
+                }
+                return assetLoader.shouldInterceptRequest(request.url)
+                    ?: blockedWebResource(404, "Not found")
+            }
+
+            override fun shouldOverrideUrlLoading(
+                view: WebView,
+                request: WebResourceRequest
+            ): Boolean {
+                val url = request.url
+                if (isPackagedAppUrl(url)) return false
+                if (isAppAssetsOrigin(url)) return true
+                if (request.isForMainFrame && url.scheme.equals("https", true)) {
+                    runCatching { startActivity(Intent(Intent.ACTION_VIEW, url)) }
+                        .onFailure { showError("Impossible d’ouvrir le lien externe") }
+                }
+                return true
+            }
         }
         webView.webChromeClient = object : WebChromeClient() {
             override fun onShowFileChooser(
@@ -399,6 +425,26 @@ class MainActivity : Activity() {
         AlertDialog.Builder(this).setMessage(message).setPositiveButton("OK", null).show()
     }
 
+    private fun isAppAssetsOrigin(uri: Uri): Boolean =
+        uri.scheme.equals("https", ignoreCase = true) &&
+            uri.host?.equals(APP_ASSETS_HOST, ignoreCase = true) == true &&
+            (uri.port == -1 || uri.port == 443)
+
+    private fun isPackagedAppUrl(uri: Uri): Boolean =
+        isAppAssetsOrigin(uri) && uri.path?.startsWith("/assets/") == true
+
+    private fun blockedWebResource(
+        statusCode: Int = 403,
+        reasonPhrase: String = "Blocked"
+    ) = WebResourceResponse(
+        "text/plain",
+        "UTF-8",
+        statusCode,
+        reasonPhrase,
+        emptyMap(),
+        ByteArrayInputStream(byteArrayOf())
+    )
+
     override fun onDestroy() {
         mainHandler.removeCallbacks(scanTimeout)
         unsubscribeEvents?.invoke()
@@ -424,6 +470,7 @@ class MainActivity : Activity() {
         private const val REQUEST_IMPORT_BACKUP = 7102
         private const val REQUEST_EXPORT_BACKUP = 7103
         private const val SCAN_DURATION_MS = 8_000L
+        private const val APP_ASSETS_HOST = "appassets.androidplatform.net"
         private const val CRAFTY_SERVICE_UUID = "00000001-4c45-4b43-4942-265a524f5453"
         private val SUPPORTED_DEVICE_SERVICES = setOf(
             CRAFTY_SERVICE_UUID,

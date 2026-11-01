@@ -7,7 +7,7 @@ test.describe("App - Allgemeine Funktionen", () => {
     await page.goto("/");
 
     // Prüfe ob die Seite geladen ist
-    await expect(page).toHaveTitle(/Volcano|Vaporizer/i);
+    await expect(page).toHaveTitle(/CRAFTY\+|Vaporizer/i);
   });
 
   test("sollte Connect-Button ohne Bluetooth-Mock anzeigen", async ({

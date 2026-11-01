@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/package-lock.json", "!**/.github"]
+    "includes": ["**", "!**/package-lock.json", "!**/.github", "!pwa"]
   },
   "formatter": {
     "indentStyle": "space",

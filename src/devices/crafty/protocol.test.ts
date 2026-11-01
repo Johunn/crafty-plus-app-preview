@@ -118,7 +118,7 @@ describe("Crafty analysis", () => {
         "SN   :   CY123456",
         "date : 0x65000000",
         "val_1: 0x0010",
-        "val_2: 0x0004",
+        "val_2: 0x1004",
         "val_3: 0x0000",
         "val_4: 0x0000",
         "val_5: 0x0200",

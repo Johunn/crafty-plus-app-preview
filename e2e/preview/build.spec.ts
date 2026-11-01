@@ -5,7 +5,7 @@ test.describe("Produktions-Build unter dem Pages-Pfad", () => {
     await page.goto("connect");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await page.reload();
-    await expect(page).toHaveURL(/\/reactive-volcano-app\/connect$/);
+    await expect(page).toHaveURL(/\/crafty-plus-app-preview\/connect$/);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   });
 
@@ -13,8 +13,13 @@ test.describe("Produktions-Build unter dem Pages-Pfad", () => {
     const response = await page.request.get("manifest.webmanifest");
     expect(response.ok()).toBe(true);
     const manifest = await response.json();
-    expect(manifest.start_url).toContain("/reactive-volcano-app/");
-    expect(manifest.scope).toBe("/reactive-volcano-app/");
+    const base = "http://localhost:4173/crafty-plus-app-preview/";
+    expect(new URL(manifest.start_url, base).pathname).toBe(
+      "/crafty-plus-app-preview/"
+    );
+    expect(new URL(manifest.scope, base).pathname).toBe(
+      "/crafty-plus-app-preview/"
+    );
   });
 
   test("sollte offline starten, sobald der Service Worker aktiv ist", async ({
