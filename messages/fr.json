@@ -299,7 +299,7 @@
   "settings_backgroundTrackingSaveFailed": "Le réglage du suivi en arrière-plan n’a pas pu être enregistré.",
   "settings_deviceSettingSaveFailed": "Le CRAFTY+ n’a pas confirmé l’enregistrement du réglage. Vérifie la connexion et réessaie.",
   "settings_waitingDeviceRead": "Lecture des réglages enregistrés sur le CRAFTY+…",
-  "settings_backgroundBatteryHint": "Alerte Android lorsque la batterie du CRAFTY+ passe à 20 % ou moins. Autorise les notifications pour la recevoir.",
+  "settings_backgroundBatteryHint": "Alerte à 20 % ou moins. Si le suivi en arrière-plan est désactivé, l’application doit rester ouverte et connectée au CRAFTY+ pour recevoir son niveau de batterie. Autorise les notifications.",
   "settings_backupTitle": "Sauvegarde des données",
   "settings_backupHint": "Exporte l’historique et les réglages pour les transférer entre la PWA et l’application Android. La restauration fusionne les historiques existants.",
   "settings_backupExport": "Exporter",

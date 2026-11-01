@@ -21,7 +21,6 @@ import {
   Show,
   untrack,
 } from "solid-js";
-import { BatteryChip } from "../components/BatteryChip";
 import { ShutdownTime } from "../components/crafty/ShutdownTime";
 import { Temperature } from "../components/crafty/Temperature";
 import { DeviceShell } from "../components/DeviceShell";
@@ -86,46 +85,55 @@ export const CraftyView: Component = () => {
 };
 
 const CraftyBatteryCard = () => {
-  const { state, derived } = useCrafty();
+  const { state } = useCrafty();
   const level = () =>
     state.loaded ? Math.max(0, Math.min(100, state.batteryLevel)) : undefined;
+  const levelState = () => {
+    const value = level();
+    if (value === undefined || value > 50) return "normal";
+    if (value > 20) return "medium";
+    return "low";
+  };
   return (
     <section
-      class="rounded-card border bg-card p-4"
+      class="rounded-3xl border border-success/20 bg-gradient-to-br from-success-soft/70 via-card to-success-soft/25 p-4 shadow-sm"
       aria-label={m.device_battery()}
     >
-      <div class="flex items-center gap-3">
-        <div class="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
-          <Battery class="size-6" />
-        </div>
-        <div class="min-w-0 flex-1">
-          <div class="flex items-baseline justify-between gap-3">
-            <h2 class="font-semibold text-sm">{m.device_battery()}</h2>
-            <span class="font-semibold text-2xl tabular-nums">
-              {level() === undefined ? "–" : `${level()} %`}
-            </span>
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex min-w-0 items-center gap-3">
+          <div class="grid size-11 shrink-0 place-items-center rounded-2xl bg-success-soft text-success">
+            <Battery class="size-6" />
           </div>
-          <div class="mt-2 h-2 overflow-hidden rounded-full bg-muted">
-            <div
-              class="h-full rounded-full bg-primary transition-[width]"
-              style={{ width: `${level() ?? 0}%` }}
-            />
-          </div>
+          <h2 class="font-semibold text-sm">{m.device_battery()}</h2>
         </div>
+        <span
+          class="font-bold text-3xl tabular-nums"
+          classList={{
+            "text-success": levelState() === "normal",
+            "text-amber-600 dark:text-amber-400": levelState() === "medium",
+            "text-destructive": levelState() === "low",
+          }}
+        >
+          {level() === undefined ? "–" : `${level()} %`}
+        </span>
       </div>
-      <div class="mt-3 grid grid-cols-2 gap-3 border-t pt-3 text-xs">
-        <div class="flex flex-col gap-0.5">
-          <span class="text-muted-foreground">{m.temperature_now()}</span>
-          <span class="font-medium tabular-nums">
-            {state.loaded ? `${state.currentTemp} °C` : "–"}
-          </span>
-        </div>
-        <div class="flex flex-col gap-0.5 text-right">
-          <span class="text-muted-foreground">{m.temperature_target()}</span>
-          <span class="font-medium tabular-nums">
-            {state.loaded ? `${derived.effectiveTargetTemp()} °C` : "–"}
-          </span>
-        </div>
+      <div
+        class="mt-4 h-3 overflow-hidden rounded-full bg-success/10 p-0.5"
+        role="progressbar"
+        aria-label={m.device_battery()}
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow={level()}
+      >
+        <div
+          class="h-full rounded-full transition-[width] duration-500"
+          classList={{
+            "bg-success": levelState() === "normal",
+            "bg-amber-500": levelState() === "medium",
+            "bg-destructive": levelState() === "low",
+          }}
+          style={{ width: `${level() ?? 0}%` }}
+        />
       </div>
     </section>
   );
@@ -262,14 +270,14 @@ const CraftyConsumptionSummary = () => {
   );
 };
 
-const CraftyBattery = () => {
+const CraftyBatteryLowAlert = () => {
   const { state } = useCrafty();
   createEffect(() => {
     if (state.loaded && !isNativeAndroidBluetooth()) {
       alertCraftyBatteryLow(state.batteryLevel);
     }
   });
-  return <BatteryChip level={state.loaded ? state.batteryLevel : undefined} />;
+  return null;
 };
 
 const CraftyLiveSession = (props: { children: JSX.Element }) => {
@@ -412,8 +420,8 @@ export const CraftyShell = (props: RouteSectionProps) => {
   return (
     <CraftyProvider>
       <CraftyLiveSession>
+        <CraftyBatteryLowAlert />
         <DeviceShell
-          headerTrailing={<CraftyBattery />}
           tabs={() => [
             {
               href: buildRoute.craftyRoot(),

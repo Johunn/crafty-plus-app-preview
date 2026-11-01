@@ -299,7 +299,7 @@
   "settings_backgroundTrackingSaveFailed": "Could not save the background tracking setting.",
   "settings_deviceSettingSaveFailed": "The CRAFTY+ did not confirm this setting. Check the connection and try again.",
   "settings_waitingDeviceRead": "Reading settings saved on the CRAFTY+…",
-  "settings_backgroundBatteryHint": "Android alert when the CRAFTY+ battery reaches 20% or less. Allow notifications to receive it.",
+  "settings_backgroundBatteryHint": "Alert at 20% or lower. With background tracking off, keep the app open and connected to CRAFTY+ to receive its battery level. Allow notifications.",
   "settings_backupTitle": "Data backup",
   "settings_backupHint": "Export history and settings to transfer them between the PWA and Android app. Restoring merges with existing history.",
   "settings_backupExport": "Export",
