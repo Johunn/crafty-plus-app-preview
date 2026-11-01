@@ -103,7 +103,7 @@ class MainActivity : Activity() {
         if (::webView.isInitialized &&
             !getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                 .getBoolean(CraftyBleService.KEY_BACKGROUND_TRACKING, true)) {
-            startService(Intent(this, CraftyBleService::class.java).setAction(CraftyBleService.ACTION_STOP))
+            stopService(Intent(this, CraftyBleService::class.java))
         }
         super.onStop()
     }

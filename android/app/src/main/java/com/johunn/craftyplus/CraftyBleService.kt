@@ -648,6 +648,14 @@ class CraftyBleService : Service() {
 
     override fun onDestroy() {
         handler.removeCallbacksAndMessages(null)
+        if (!trackingEnabled) {
+            gatt?.device?.address?.let { address ->
+                CraftyBleEvents.emit(
+                    JSONObject().put("kind", "connection").put("state", "stopped")
+                        .put("deviceId", address)
+                )
+            }
+        }
         runCatching { gatt?.close() }
         if (!isFinishing && trackingEnabled) {
             val now = System.currentTimeMillis()
