@@ -12,6 +12,7 @@ import {
   SettingsSection,
 } from "../components/Settings";
 import { Alert, AlertDescription } from "../components/ui/alert";
+import { Button } from "../components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "../components/ui/toggle-group";
 import { Limits } from "../devices/crafty/protocol";
 import { m } from "../paraglide/messages";
@@ -103,32 +104,55 @@ export const CraftySettingsView: Component = () => {
 
       <Show when={state.loaded}>
         <SettingsSection title={m.settings_sectionBehavior()}>
-          <SettingSwitch
-            label={m.settings_vibration()}
-            description={m.settings_enableVibration()}
-            checked={derived.isVibrationOn()}
-            onChange={(enabled) =>
-              saveDeviceSetting(() => actions.setVibration(enabled))
+          <Show
+            when={state.statusRegister2Verified}
+            fallback={
+              <SettingRow label={m.settings_deviceSettingsUnconfirmed()}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={state.statusRegister2Pending}
+                  onClick={() =>
+                    saveDeviceSetting(actions.refreshStatusRegister2)
+                  }
+                >
+                  {m.connect_retry()}
+                </Button>
+              </SettingRow>
             }
-          />
-          <SettingSwitch
-            label={m.settings_chargeIndicatorLamp()}
-            description={m.settings_enableChargeLed()}
-            checked={derived.isChargeLedOn()}
-            onChange={(enabled) =>
-              saveDeviceSetting(() => actions.setChargeLed(enabled))
-            }
-          />
-          {/* Permanent Bluetooth - not on old firmware */}
-          <Show when={!isOldFirmware}>
+          >
             <SettingSwitch
-              label={m.settings_permanentBluetooth()}
-              description={m.settings_keepBluetoothAlwaysOn()}
-              checked={derived.isPermanentBluetooth()}
+              label={m.settings_vibration()}
+              description={m.settings_enableVibration()}
+              checked={derived.isVibrationOn()}
+              disabled={state.statusRegister2Pending}
               onChange={(enabled) =>
-                saveDeviceSetting(() => actions.setPermanentBluetooth(enabled))
+                saveDeviceSetting(() => actions.setVibration(enabled))
               }
             />
+            <SettingSwitch
+              label={m.settings_chargeIndicatorLamp()}
+              description={m.settings_enableChargeLed()}
+              checked={derived.isChargeLedOn()}
+              disabled={state.statusRegister2Pending}
+              onChange={(enabled) =>
+                saveDeviceSetting(() => actions.setChargeLed(enabled))
+              }
+            />
+            {/* Permanent Bluetooth - not on old firmware */}
+            <Show when={!isOldFirmware}>
+              <SettingSwitch
+                label={m.settings_permanentBluetooth()}
+                description={m.settings_keepBluetoothAlwaysOn()}
+                checked={derived.isPermanentBluetooth()}
+                disabled={state.statusRegister2Pending}
+                onChange={(enabled) =>
+                  saveDeviceSetting(() =>
+                    actions.setPermanentBluetooth(enabled)
+                  )
+                }
+              />
+            </Show>
           </Show>
         </SettingsSection>
 

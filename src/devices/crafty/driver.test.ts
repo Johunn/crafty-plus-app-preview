@@ -1,10 +1,13 @@
 import PQueue from "p-queue";
+import { createRoot } from "solid-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   CraftyServiceUUIDs,
   CraftyCharacteristicUUIDs as UUID,
 } from "../../utils/uuids";
 import { type CraftyUpdate, connectCrafty } from "./driver";
+import { StatusRegister2Bit } from "./protocol";
+import { createCraftyStore } from "./store";
 
 type Write = { uuid: string; bytes: number[] };
 
@@ -12,6 +15,7 @@ class FakeCharacteristic extends EventTarget {
   value?: DataView;
   startNotifications = vi.fn(async () => this);
   stopNotifications = vi.fn(async () => this);
+  ignoreWrites = false;
 
   constructor(
     readonly uuid: string,
@@ -26,10 +30,16 @@ class FakeCharacteristic extends EventTarget {
   }
 
   async writeValue(value: BufferSource) {
+    const bytes = [...new Uint8Array(value as ArrayBuffer)];
     this.writes.push({
       uuid: this.uuid,
-      bytes: [...new Uint8Array(value as ArrayBuffer)],
+      bytes,
     });
+    if (!this.ignoreWrites) this.setBytes(bytes);
+  }
+
+  setBytes(bytes: number[]) {
+    this.bytes = bytes;
   }
 
   notify(bytes: number[]) {
@@ -159,15 +169,83 @@ describe("Crafty driver", () => {
     expect(driver.isCraftyPlus).toBe(false);
   });
 
-  it("writes status register 2 and reads it back", async () => {
+  it("preserves other settings from the device when it writes and confirms a bit", async () => {
     const { driver, writes, characteristics } = await collect();
     const register = characteristicOf(characteristics, UUID.statusRegister2);
-    const read = vi.spyOn(register, "readValue");
-    await driver.setStatusRegister2(0x1005);
+    // The charge LED setting changed since the initial read.
+    register.setBytes([0x06, 0]);
+    await expect(
+      driver.setStatusRegister2Bit(StatusRegister2Bit.PERMANENT_BLUETOOTH, true)
+    ).resolves.toBe(0x1006);
     expect(writes).toEqual([
-      { uuid: UUID.statusRegister2, bytes: [0x05, 0x10] },
+      { uuid: UUID.statusRegister2, bytes: [0x06, 0x10] },
     ]);
-    expect(read).toHaveBeenCalledOnce();
+  });
+
+  it("matches the official Permanent Bluetooth switch on connection and in both directions", async () => {
+    const { server, writes, characteristics } = createServer();
+    const register = characteristicOf(characteristics, UUID.statusRegister2);
+    register.setBytes([0x04, 0x10]);
+    const driver = await connectCrafty(server, queue);
+    const { store, dispose } = createRoot((dispose) => ({
+      store: createCraftyStore(driver),
+      dispose,
+    }));
+    try {
+      await vi.waitFor(() => expect(store.state.loaded).toBe(true));
+      expect(store.derived.isPermanentBluetooth()).toBe(true);
+      expect(writes).toEqual([]);
+
+      const disabling = store.actions.setPermanentBluetooth(false);
+      expect(store.state.statusRegister2Pending).toBe(true);
+      expect(store.derived.isPermanentBluetooth()).toBe(true);
+      await disabling;
+      expect(store.derived.isPermanentBluetooth()).toBe(false);
+
+      await store.actions.setPermanentBluetooth(true);
+      expect(store.derived.isPermanentBluetooth()).toBe(true);
+      expect(writes).toEqual([
+        { uuid: UUID.statusRegister2, bytes: [0x04, 0x00] },
+        { uuid: UUID.statusRegister2, bytes: [0x04, 0x10] },
+      ]);
+    } finally {
+      dispose();
+    }
+  });
+
+  it("keeps the device's confirmed setting on a refused change and allows a fresh read after a failed readback", async () => {
+    const { server, characteristics } = createServer();
+    const register = characteristicOf(characteristics, UUID.statusRegister2);
+    const driver = await connectCrafty(server, queue);
+    const { store, dispose } = createRoot((dispose) => ({
+      store: createCraftyStore(driver),
+      dispose,
+    }));
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      await vi.waitFor(() => expect(store.state.loaded).toBe(true));
+      register.ignoreWrites = true;
+      await expect(store.actions.setPermanentBluetooth(true)).rejects.toThrow(
+        "did not confirm"
+      );
+      expect(store.state.statusRegister2Verified).toBe(true);
+      expect(store.derived.isPermanentBluetooth()).toBe(false);
+
+      register.ignoreWrites = false;
+      vi.spyOn(register, "readValue")
+        .mockResolvedValueOnce(new DataView(new Uint8Array([0x04, 0]).buffer))
+        .mockRejectedValueOnce(new Error("Readback failed"));
+      await expect(store.actions.setPermanentBluetooth(true)).rejects.toThrow(
+        "Readback failed"
+      );
+      expect(store.state.statusRegister2Verified).toBe(false);
+      await store.actions.refreshStatusRegister2();
+      expect(store.state.statusRegister2Verified).toBe(true);
+      expect(store.derived.isPermanentBluetooth()).toBe(true);
+    } finally {
+      log.mockRestore();
+      dispose();
+    }
   });
 
   it("re-reads the registers for the analysis", async () => {

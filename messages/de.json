@@ -294,6 +294,7 @@
   "settings_backgroundTrackingHint": "Wenn die Option aus ist, wird die Verbindung getrennt, sobald du die App verlässt, und die Aufzeichnung pausiert. Bereits gespeicherte Daten bleiben erhalten.",
   "settings_backgroundTrackingSaveFailed": "Die Einstellung für die Hintergrundaufzeichnung konnte nicht gespeichert werden.",
   "settings_deviceSettingSaveFailed": "Der CRAFTY+ hat diese Einstellung nicht bestätigt. Prüfe die Verbindung und versuche es erneut.",
+  "settings_deviceSettingsUnconfirmed": "Die Einstellungen des CRAFTY+ konnten nicht bestätigt werden.",
   "settings_waitingDeviceRead": "Einstellungen vom CRAFTY+ werden gelesen…",
   "settings_backgroundBatteryHint": "Warnung bei 20 % oder weniger. Bei deaktivierter Hintergrundüberwachung muss die App geöffnet und mit dem CRAFTY+ verbunden bleiben, damit der Akkustand empfangen wird. Erlaube Benachrichtigungen.",
   "settings_backupTitle": "Datensicherung",

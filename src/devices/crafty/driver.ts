@@ -26,6 +26,7 @@ import {
   parseText,
   parseUint16,
   SecurityCode,
+  withBit,
 } from "./protocol";
 
 export interface CraftyValues {
@@ -74,6 +75,12 @@ interface Characteristics {
   factoryReset?: Characteristic;
 }
 
+const parseStatusRegister2 = (value: DataView) => {
+  if (value.byteLength < 2)
+    throw new Error("Incomplete Crafty status register 2");
+  return parseUint16(value);
+};
+
 // How each readable characteristic maps onto CraftyValues
 const readers: Partial<Record<keyof Characteristics, Reader<CraftyValues>>> = {
   targetTemp: (v) => ({ targetTemp: parseTargetTemperature(v) }),
@@ -83,7 +90,7 @@ const readers: Partial<Record<keyof Characteristics, Reader<CraftyValues>>> = {
   ledBrightness: (v) => ({ ledBrightness: parseUint16(v) }),
   useHours: (v) => ({ useHours: parseUint16(v) }),
   projectRegister: (v) => ({ projectRegister: parseUint16(v) }),
-  statusRegister2: (v) => ({ statusRegister2: parseUint16(v) }),
+  statusRegister2: (v) => ({ statusRegister2: parseStatusRegister2(v) }),
   bleFirmwareVersion: (v) => ({
     bleFirmwareVersion: parseBleFirmwareVersion(v),
   }),
@@ -143,8 +150,9 @@ export interface CraftyDriver {
   setBoostTemperature(celsius: number): Promise<void>;
   setLedBrightness(value: number): Promise<void>;
   setAutoOffCountdown(seconds: number): Promise<void>;
-  /** Writes the whole status register 2 and reads it back */
-  setStatusRegister2(value: number): Promise<void>;
+  readStatusRegister2(): Promise<number>;
+  /** Changes one bit in the current register and returns the device's readback */
+  setStatusRegister2Bit(bit: number, enabled: boolean): Promise<number>;
   heaterOn(): Promise<void>;
   heaterOff(): Promise<void>;
   factoryReset(): Promise<void>;
@@ -160,6 +168,9 @@ export const createCraftyDriver = (
 ): CraftyDriver => {
   const { firmwareVersion, serialNumber } = info;
   const isOld = isOldFirmware(firmwareVersion);
+  const statusRegister2 = characteristics.statusRegister2;
+  const readStatusRegister2 = async () =>
+    parseStatusRegister2(await statusRegister2.readValue());
   const device = createCharacteristicDevice<
     keyof Characteristics,
     CraftyValues
@@ -194,10 +205,15 @@ export const createCraftyDriver = (
         ["securityCode", encodeUint16(SecurityCode.AUTO_OFF_COUNTDOWN)],
         ["autoOffCountdown", encodeUint16(seconds)],
       ]),
-    async setStatusRegister2(value) {
-      await device.write("statusRegister2", encodeUint16(value));
-      // Read back what the device accepted
-      await device.read("statusRegister2");
+    readStatusRegister2: () => queue.add(readStatusRegister2),
+    setStatusRegister2Bit(bit, enabled) {
+      return queue.add(async () => {
+        const current = await readStatusRegister2();
+        const requested = withBit(current, bit, enabled);
+        if (requested === current) return current;
+        await statusRegister2.writeValue(encodeUint16(requested));
+        return readStatusRegister2();
+      });
     },
     heaterOn: () => device.write("heaterOn", encodeHeaterCommand()),
     heaterOff: () => device.write("heaterOff", encodeHeaterCommand()),

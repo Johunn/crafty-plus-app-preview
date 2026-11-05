@@ -40,7 +40,8 @@ export const StatusRegister2Bit = {
   DISABLE_CHARGE_LED: 1 << 1,
   SETPOINT_REACHED: 1 << 2,
   FIND_DEVICE: 1 << 3,
-  ENABLE_AUTO_BLE_SHUTDOWN: 1 << 12,
+  // The official app checks this bit for Permanent Bluetooth.
+  PERMANENT_BLUETOOTH: 1 << 12,
 } as const;
 
 // Must be written to the security code characteristic before the protected
@@ -126,6 +127,9 @@ export const isSetpointReached = (statusRegister2: number) =>
 
 export const hasBit = (register: number, bit: number) => (register & bit) !== 0;
 
+export const isPermanentBluetoothEnabled = (register: number) =>
+  hasBit(register, StatusRegister2Bit.PERMANENT_BLUETOOTH);
+
 /** Returns the register with one bit set or cleared */
 export const withBit = (register: number, bit: number, set: boolean) =>
   set ? register | bit : register & ~bit;
@@ -200,7 +204,7 @@ export const analyzeCrafty = (input: CraftyAnalysisInput): AnalysisResult => {
   if (hasBit(register2, StatusRegister2Bit.DISABLE_CHARGE_LED)) {
     findings.push("analysis_finding_ledDisabled");
   }
-  if (!hasBit(register2, StatusRegister2Bit.ENABLE_AUTO_BLE_SHUTDOWN)) {
+  if (isPermanentBluetoothEnabled(register2)) {
     findings.push("analysis_finding_bluetoothAlwaysOn");
   }
   if (

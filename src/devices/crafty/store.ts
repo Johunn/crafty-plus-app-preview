@@ -8,11 +8,11 @@ import {
   clamp,
   hasBit,
   isHeaterActive,
+  isPermanentBluetoothEnabled,
   isSetpointReached,
   Limits,
   ProjectRegisterBit,
   StatusRegister2Bit,
-  withBit,
 } from "./protocol";
 
 // Sliders and +/- buttons fire many changes; only the last one is written.
@@ -28,6 +28,8 @@ type DebouncedField =
 
 export interface CraftyState extends CraftyValues {
   loaded: boolean;
+  statusRegister2Verified: boolean;
+  statusRegister2Pending: boolean;
 }
 
 /**
@@ -49,6 +51,8 @@ export const createCraftyStore = (
     useHours: 0,
     projectRegister: 0,
     statusRegister2: 0,
+    statusRegister2Verified: false,
+    statusRegister2Pending: false,
     bleFirmwareVersion: null,
     useMinutes: null,
     autoOffCountdown: null,
@@ -68,7 +72,12 @@ export const createCraftyStore = (
     for (const field of Object.keys(next) as (keyof CraftyUpdate)[]) {
       if (writer.isHeld(field as DebouncedField)) delete next[field];
     }
-    setState(next);
+    setState({
+      ...next,
+      ...(next.statusRegister2 !== undefined && {
+        statusRegister2Verified: true,
+      }),
+    });
   };
 
   // Subscribe before starting so the initial reads arrive
@@ -89,16 +98,37 @@ export const createCraftyStore = (
   const logError = (action: string) => (error: unknown) =>
     console.error(`Crafty ${action} failed:`, error);
 
-  // Show the change right away; the read-back confirms it
-  const setStatusRegister2Bit = (bit: number, set: boolean, action: string) => {
-    const previous = state.statusRegister2;
-    const value = withBit(previous, bit, set);
-    setState("statusRegister2", value);
-    return driver.setStatusRegister2(value).catch((error) => {
-      setState("statusRegister2", previous);
+  const confirmStatusRegister2 = async (read: () => Promise<number>) => {
+    if (!state.loaded || state.statusRegister2Pending) return;
+    setState("statusRegister2Pending", true);
+    try {
+      const register = await read();
+      setState({ statusRegister2: register, statusRegister2Verified: true });
+      return register;
+    } catch (error) {
+      setState("statusRegister2Verified", false);
+      throw error;
+    } finally {
+      setState("statusRegister2Pending", false);
+    }
+  };
+
+  const setStatusRegister2Bit = async (
+    bit: number,
+    set: boolean,
+    action: string
+  ) => {
+    try {
+      const register = await confirmStatusRegister2(() =>
+        driver.setStatusRegister2Bit(bit, set)
+      );
+      if (register !== undefined && hasBit(register, bit) !== set) {
+        throw new Error("The Crafty did not confirm the requested setting");
+      }
+    } catch (error) {
       logError(action)(error);
       throw error;
-    });
+    }
   };
 
   const actions = {
@@ -165,12 +195,14 @@ export const createCraftyStore = (
       );
     },
     setPermanentBluetooth(enabled: boolean) {
-      // A set bit enables automatic BLE shutdown; clear it to keep BLE on.
       return setStatusRegister2Bit(
-        StatusRegister2Bit.ENABLE_AUTO_BLE_SHUTDOWN,
-        !enabled,
+        StatusRegister2Bit.PERMANENT_BLUETOOTH,
+        enabled,
         "permanent bluetooth"
       );
+    },
+    async refreshStatusRegister2() {
+      await confirmStatusRegister2(driver.readStatusRegister2);
     },
     /** Reads the registers and runs the self-check (not on old firmware) */
     async runAnalysis(): Promise<AnalysisResult> {
@@ -227,10 +259,7 @@ export const createCraftyStore = (
     isChargeLedOn: () =>
       !hasBit(state.statusRegister2, StatusRegister2Bit.DISABLE_CHARGE_LED),
     isPermanentBluetooth: () =>
-      !hasBit(
-        state.statusRegister2,
-        StatusRegister2Bit.ENABLE_AUTO_BLE_SHUTDOWN
-      ),
+      isPermanentBluetoothEnabled(state.statusRegister2),
     isFindMyActive: () =>
       hasBit(state.statusRegister2, StatusRegister2Bit.FIND_DEVICE),
   };

@@ -30,6 +30,7 @@ import { useBluetooth } from "../provider/BluetoothProvider";
 import { useConnectionUsage } from "../provider/ConnectionUsageProvider";
 import { CraftyProvider, useCrafty } from "../provider/CraftyProvider";
 import { LiveSessionProvider } from "../provider/LiveSessionProvider";
+import { useToast } from "../provider/ToastProvider";
 import { buildRoute } from "../routes";
 import { isNativeAndroidBluetooth } from "../utils/androidBluetooth";
 import {
@@ -48,7 +49,8 @@ import { isPlausibleTemp } from "../utils/sessionHistory";
 import { ConnectionState } from "../utils/uuids";
 
 export const CraftyView: Component = () => {
-  const { actions, derived, isCraftyPlus } = useCrafty();
+  const { actions, derived, isCraftyPlus, state } = useCrafty();
+  const showToast = useToast();
 
   // Keep the screen on while the device heats
 
@@ -64,8 +66,19 @@ export const CraftyView: Component = () => {
       <Show when={isCraftyPlus}>
         <button
           type="button"
-          disabled={derived.isFindMyActive()}
-          onClick={actions.findMyDevice}
+          disabled={
+            !state.loaded ||
+            !state.statusRegister2Verified ||
+            state.statusRegister2Pending ||
+            derived.isFindMyActive()
+          }
+          onClick={() => {
+            void actions
+              .findMyDevice()
+              .catch(() =>
+                showToast({ message: m.settings_deviceSettingSaveFailed() })
+              );
+          }}
           class="flex items-center gap-3 rounded-2xl border bg-card px-4 py-3.5 text-left transition-colors hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-2 disabled:opacity-60"
         >
           <MapPin class="size-[18px] text-muted-foreground" />
