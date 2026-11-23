@@ -16,23 +16,32 @@ interface TargetStepperProps {
   onDecrease: () => void;
   canIncrease?: boolean;
   canDecrease?: boolean;
+  compact?: boolean;
 }
 
 /** Card with the target temperature between hold-to-repeat −/+ buttons */
 export const TargetStepper = (props: TargetStepperProps) => (
-  <Card class="flex items-center gap-3 p-3.5">
+  <Card
+    class={cn("flex items-center gap-3", props.compact ? "px-3 py-2" : "p-3.5")}
+  >
     <RepeatButton
       onStep={props.onDecrease}
       disabled={props.canDecrease === false}
+      size={props.compact ? "icon" : "icon-lg"}
       aria-label={m.temperature_decrease()}
     >
       <Minus />
     </RepeatButton>
     <div class="flex flex-1 flex-col items-center gap-0.5">
-      <span class="font-medium text-[11px] text-muted-foreground uppercase tracking-[0.14em]">
+      <span class="text-center font-medium text-[11px] text-muted-foreground uppercase tracking-[0.14em]">
         {props.label}
       </span>
-      <span class="font-medium text-[40px] leading-tight tracking-[-0.03em]">
+      <span
+        class={cn(
+          "font-medium leading-tight tracking-[-0.03em]",
+          props.compact ? "text-[30px]" : "text-[40px]"
+        )}
+      >
         {props.children}
       </span>
       <Show when={props.description}>
@@ -45,6 +54,7 @@ export const TargetStepper = (props: TargetStepperProps) => (
       variant="default"
       onStep={props.onIncrease}
       disabled={props.canIncrease === false}
+      size={props.compact ? "icon" : "icon-lg"}
       aria-label={m.temperature_increase()}
     >
       <Plus />
@@ -60,6 +70,7 @@ interface OffsetStepperProps {
   onIncrease: () => void;
   onDecrease: () => void;
   active?: boolean;
+  compact?: boolean;
 }
 
 /** Matching card for a boost offset with a compact, centered stepper */
@@ -69,7 +80,8 @@ export const OffsetStepper = (props: OffsetStepperProps) => {
   return (
     <Card
       class={cn(
-        "flex h-full min-w-0 flex-col justify-between gap-3 p-3.5 transition-colors",
+        "flex h-full min-w-0 flex-col justify-between gap-3 transition-colors",
+        props.compact ? "p-2.5" : "p-3.5",
         props.active && "border-primary/50 bg-primary-soft"
       )}
     >
@@ -88,7 +100,12 @@ export const OffsetStepper = (props: OffsetStepperProps) => {
           {props.label}
         </span>
       </div>
-      <div class="flex min-w-0 items-center justify-between gap-1 rounded-xl bg-muted/50 p-1">
+      <div
+        class={cn(
+          "flex min-w-0 items-center justify-between rounded-xl bg-muted/50",
+          props.compact ? "gap-0.5 p-0.5" : "gap-1 p-1"
+        )}
+      >
         <RepeatButton
           size="icon-sm"
           class="size-8 shrink-0 rounded-lg"
@@ -97,7 +114,12 @@ export const OffsetStepper = (props: OffsetStepperProps) => {
         >
           <Minus />
         </RepeatButton>
-        <span class="min-w-0 flex-1 whitespace-nowrap text-center font-semibold text-xl text-primary tabular-nums">
+        <span
+          class={cn(
+            "min-w-0 flex-1 whitespace-nowrap text-center font-semibold text-primary tabular-nums",
+            props.compact ? "text-base" : "text-xl"
+          )}
+        >
           {props.value}
         </span>
         <RepeatButton

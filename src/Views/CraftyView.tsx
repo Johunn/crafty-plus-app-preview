@@ -57,11 +57,12 @@ export const CraftyView: Component = () => {
   return (
     <>
       <CraftyBatteryCard />
-      <Show when={!isNativeAndroidBluetooth() || backgroundTrackingEnabled()}>
-        <CraftyConsumptionSummary />
-      </Show>
-      <ShutdownTime />
-      <Temperature />
+      <Temperature>
+        <ShutdownTime />
+        <Show when={!isNativeAndroidBluetooth() || backgroundTrackingEnabled()}>
+          <CraftyConsumptionSummary />
+        </Show>
+      </Temperature>
       {/* Find My Device - only Crafty+ */}
       <Show when={isCraftyPlus}>
         <button
@@ -109,29 +110,13 @@ const CraftyBatteryCard = () => {
   };
   return (
     <section
-      class="rounded-3xl border border-success/20 bg-gradient-to-br from-success-soft/70 via-card to-success-soft/25 p-4 shadow-sm"
+      class="flex items-center gap-2.5 rounded-card border border-success/20 bg-success-soft/40 px-3 py-2"
       aria-label={m.device_battery()}
     >
-      <div class="flex items-center justify-between gap-3">
-        <div class="flex min-w-0 items-center gap-3">
-          <div class="grid size-11 shrink-0 place-items-center rounded-2xl bg-success-soft text-success">
-            <Battery class="size-6" />
-          </div>
-          <h2 class="font-semibold text-sm">{m.device_battery()}</h2>
-        </div>
-        <span
-          class="font-bold text-3xl tabular-nums"
-          classList={{
-            "text-success": levelState() === "normal",
-            "text-amber-600 dark:text-amber-400": levelState() === "medium",
-            "text-destructive": levelState() === "low",
-          }}
-        >
-          {level() === undefined ? "–" : `${level()} %`}
-        </span>
-      </div>
+      <Battery class="size-5 shrink-0 text-success" />
+      <h2 class="font-semibold text-sm">{m.device_battery()}</h2>
       <div
-        class="mt-4 h-3 overflow-hidden rounded-full bg-success/10 p-0.5"
+        class="h-2 min-w-4 flex-1 overflow-hidden rounded-full bg-success/10"
         role="progressbar"
         aria-label={m.device_battery()}
         aria-valuemin="0"
@@ -148,6 +133,16 @@ const CraftyBatteryCard = () => {
           style={{ width: `${level() ?? 0}%` }}
         />
       </div>
+      <span
+        class="min-w-[3ch] whitespace-nowrap text-right font-bold text-sm tabular-nums"
+        classList={{
+          "text-success": levelState() === "normal",
+          "text-amber-600 dark:text-amber-400": levelState() === "medium",
+          "text-destructive": levelState() === "low",
+        }}
+      >
+        {level() === undefined ? "–" : `${level()} %`}
+      </span>
     </section>
   );
 };

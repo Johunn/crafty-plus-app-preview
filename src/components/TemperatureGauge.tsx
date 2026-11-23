@@ -41,6 +41,7 @@ interface TemperatureGaugeProps {
   /** Scale labels below the arc, in the device's unit */
   minLabel: string;
   maxLabel: string;
+  compact?: boolean;
 }
 
 // Arc geometry: a 270° ring that is open at the bottom
@@ -147,7 +148,10 @@ export const TemperatureGauge = (props: TemperatureGaugeProps) => {
   return (
     <section class="flex flex-col items-center">
       <div
-        class="relative aspect-[264/250] w-[264px] max-w-full"
+        class={cn(
+          "relative aspect-[264/250] max-w-full",
+          props.compact ? "w-[212px]" : "w-[264px]"
+        )}
         role="progressbar"
         aria-label={label()}
         aria-valuemin={0}
@@ -223,7 +227,8 @@ export const TemperatureGauge = (props: TemperatureGaugeProps) => {
           </span>
           <span
             class={cn(
-              "font-extralight text-[80px] leading-none tracking-[-0.04em] transition-[text-shadow] duration-700",
+              "font-extralight leading-none tracking-[-0.04em] transition-[text-shadow] duration-700",
+              props.compact ? "text-[60px]" : "text-[80px]",
               (status() === "heating" || status() === "cooling") &&
                 "fx-strong:[text-shadow:0_0_28px_var(--glow)]",
               status() === "reached" &&
@@ -243,7 +248,12 @@ export const TemperatureGauge = (props: TemperatureGaugeProps) => {
           </Badge>
         </div>
       </div>
-      <div class="-mt-3 flex w-[230px] max-w-full justify-between font-mono text-[11px] text-muted-foreground">
+      <div
+        class={cn(
+          "-mt-3 flex max-w-full justify-between font-mono text-[11px] text-muted-foreground",
+          props.compact ? "w-[188px]" : "w-[230px]"
+        )}
+      >
         <span>{props.minLabel}</span>
         <Show when={eta()}>
           {(seconds) => (

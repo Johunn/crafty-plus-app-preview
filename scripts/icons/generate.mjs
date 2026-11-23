@@ -5,7 +5,7 @@
  *
  * Uses Playwright's Chromium; set CHROMIUM_PATH to use another Chromium.
  */
-import { copyFileSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "@playwright/test";
@@ -16,7 +16,15 @@ const svg = readFileSync(join(root, "scripts/icons/icon.svg"), "utf8");
 
 // Maskable and Apple icons are cropped by the platform: no rounded corners,
 // the background has to fill the whole square
-const fullBleed = svg.replace('rx="112"', 'rx="0"');
+const background =
+  /<rect width="512" height="512" rx="112" fill="(#[0-9a-fA-F]{6})"\/>/.exec(
+    svg
+  );
+if (!background) throw new Error("Missing icon background in icon.svg");
+const fullBleed = svg.replace(
+  background[0],
+  background[0].replace('rx="112"', 'rx="0"')
+);
 
 const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_PATH || undefined,
@@ -42,9 +50,19 @@ for (const [file, source, size] of outputs) {
   console.log(`public/${file}`);
 }
 
-const androidIcon = "android/app/src/main/res/mipmap-nodpi/ic_launcher.png";
-copyFileSync(join(publicDir, "maskable-512x512.png"), join(root, androidIcon));
-console.log(androidIcon);
+const androidRes = join(root, "android/app/src/main/res");
+const androidForeground = svg
+  .replace(background[0], "")
+  .replace('viewBox="0 0 512 512"', 'viewBox="-64 -64 640 640"');
+mkdirSync(join(androidRes, "mipmap-nodpi"), { recursive: true });
+writeFileSync(
+  join(androidRes, "mipmap-nodpi/ic_launcher_crafty_foreground.png"),
+  await render(androidForeground, 432)
+);
+writeFileSync(
+  join(androidRes, "values/crafty_launcher_colors.xml"),
+  `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="crafty_launcher_background">${background[1]}</color>\n</resources>\n`
+);
 
 // favicon.ico with embedded PNGs (supported by every current browser)
 const sizes = [16, 32, 48];

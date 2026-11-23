@@ -1,7 +1,7 @@
 import Power from "lucide-solid/icons/power";
 import Thermometer from "lucide-solid/icons/thermometer";
 import TriangleAlert from "lucide-solid/icons/triangle-alert";
-import { Show } from "solid-js";
+import { type JSX, Show } from "solid-js";
 import { Limits } from "../../devices/crafty/protocol";
 import { m } from "../../paraglide/messages";
 import { useCrafty } from "../../provider/CraftyProvider";
@@ -17,7 +17,7 @@ import { TemperatureDisplay } from "../TemperatureDisplay";
 import { TemperatureGauge } from "../TemperatureGauge";
 import { Alert, AlertDescription } from "../ui/alert";
 
-export const Temperature = () => {
+export const Temperature = (props: { children?: JSX.Element }) => {
   const { state, actions, derived, isOldFirmware, temperatureUnit } =
     useCrafty();
   const unit = () => temperatureUnit();
@@ -44,74 +44,81 @@ export const Temperature = () => {
 
   return (
     <>
-      <TemperatureGauge
-        current={currentTemp()}
-        target={effectiveTargetTemp()}
-        min={Limits.MIN_TEMP}
-        max={Limits.MAX_TEMP}
-        heating={derived.isHeaterActive()}
-        reached={derived.isSetpointReached()}
-        minLabel={`${displayTemp(Limits.MIN_TEMP)}°`}
-        maxLabel={`${displayTemp(Limits.MAX_TEMP)}°`}
-        targetLabel={`${displayTemp(effectiveTargetTemp())} °${unit()}`}
-      >
-        <TemperatureDisplay
-          value={displayTemp(currentTemp() ?? effectiveTargetTemp())}
-          unit={unit()}
-          raisedUnit
-        />
-      </TemperatureGauge>
-
-      <TargetStepper
-        label={activeTargetLabel()}
-        description={baseTemperatureDescription()}
-        onDecrease={() => actions.setTargetTemp(state.targetTemp - 1)}
-        onIncrease={() => actions.setTargetTemp(state.targetTemp + 1)}
-        canDecrease={state.targetTemp > Limits.MIN_TEMP}
-        canIncrease={state.targetTemp < Limits.MAX_TEMP}
-      >
-        <TemperatureDisplay
-          value={displayTemp(effectiveTargetTemp())}
-          unit={unit()}
-        />
-      </TargetStepper>
-
-      <div class="grid grid-cols-2 gap-3">
-        <Show
-          when={!isOldFirmware}
-          fallback={
-            <Alert class="rounded-card">
-              <TriangleAlert />
-              <AlertDescription class="text-xs">
-                {m.crafty_oldHeaterUnavailable()}
-              </AlertDescription>
-            </Alert>
-          }
+      <div class="flex flex-col gap-2.5">
+        <TemperatureGauge
+          compact
+          current={currentTemp()}
+          target={effectiveTargetTemp()}
+          min={Limits.MIN_TEMP}
+          max={Limits.MAX_TEMP}
+          heating={derived.isHeaterActive()}
+          reached={derived.isSetpointReached()}
+          minLabel={`${displayTemp(Limits.MIN_TEMP)}°`}
+          maxLabel={`${displayTemp(Limits.MAX_TEMP)}°`}
+          targetLabel={`${displayTemp(effectiveTargetTemp())} °${unit()}`}
         >
-          <ToggleTile
-            label={m.crafty_heating()}
-            status={
-              !derived.isHeaterActive()
-                ? m.common_off()
-                : derived.isSuperBoostActive()
-                  ? m.crafty_superBoostMode()
-                  : derived.isBoostActive()
-                    ? m.crafty_boostMode()
-                    : m.crafty_baseMode()
-            }
-            icon={Power}
-            pressed={derived.isHeaterActive()}
-            onToggle={actions.toggleHeater}
+          <TemperatureDisplay
+            value={displayTemp(currentTemp() ?? effectiveTargetTemp())}
+            unit={unit()}
+            raisedUnit
           />
-        </Show>
-        <OffsetStepper
-          label={m.crafty_boostPower()}
-          value={`+${displayOffset(state.boostTemp)}°`}
-          icon={Thermometer}
-          onDecrease={() => actions.setBoostTemp(state.boostTemp - 1)}
-          onIncrease={() => actions.setBoostTemp(state.boostTemp + 1)}
-        />
+        </TemperatureGauge>
+
+        <TargetStepper
+          compact
+          label={activeTargetLabel()}
+          description={baseTemperatureDescription()}
+          onDecrease={() => actions.setTargetTemp(state.targetTemp - 1)}
+          onIncrease={() => actions.setTargetTemp(state.targetTemp + 1)}
+          canDecrease={state.targetTemp > Limits.MIN_TEMP}
+          canIncrease={state.targetTemp < Limits.MAX_TEMP}
+        >
+          <TemperatureDisplay
+            value={displayTemp(effectiveTargetTemp())}
+            unit={unit()}
+          />
+        </TargetStepper>
+
+        <div class="grid grid-cols-2 gap-3">
+          <Show
+            when={!isOldFirmware}
+            fallback={
+              <Alert class="rounded-card">
+                <TriangleAlert />
+                <AlertDescription class="text-xs">
+                  {m.crafty_oldHeaterUnavailable()}
+                </AlertDescription>
+              </Alert>
+            }
+          >
+            <ToggleTile
+              label={m.crafty_heating()}
+              status={
+                !derived.isHeaterActive()
+                  ? m.common_off()
+                  : derived.isSuperBoostActive()
+                    ? m.crafty_superBoostMode()
+                    : derived.isBoostActive()
+                      ? m.crafty_boostMode()
+                      : m.crafty_baseMode()
+              }
+              icon={Power}
+              pressed={derived.isHeaterActive()}
+              onToggle={actions.toggleHeater}
+            />
+          </Show>
+          <OffsetStepper
+            compact
+            label={m.crafty_boostPower()}
+            value={`+${displayOffset(state.boostTemp)}°`}
+            icon={Thermometer}
+            onDecrease={() => actions.setBoostTemp(state.boostTemp - 1)}
+            onIncrease={() => actions.setBoostTemp(state.boostTemp + 1)}
+          />
+        </div>
       </div>
+
+      {props.children}
 
       <p class="px-1 text-muted-foreground text-[11px] leading-relaxed">
         {m.crafty_boostHowTo()}

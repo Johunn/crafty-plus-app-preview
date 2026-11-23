@@ -59,3 +59,38 @@ test.describe("Crafty Gerät - Steuerung", () => {
     await expect(page.locator("button").first()).toBeVisible({ timeout: 5000 });
   });
 });
+
+test.describe("Crafty on a compact French mobile screen", () => {
+  test.use({
+    viewport: { width: 360, height: 640 },
+    locale: "fr-FR",
+    isMobile: true,
+    hasTouch: true,
+  });
+
+  test("shows heating and both boost buttons above the navigation without scrolling", async ({
+    page,
+    bluetoothDevice,
+  }) => {
+    await bluetoothDevice("CRAFTY");
+    await page.goto("/");
+    await page
+      .getByRole("button", { name: /connecter/i })
+      .first()
+      .click();
+
+    const heating = page.getByRole("button", { name: /^Chauffe/ });
+    const boost = page.getByText("Puissance du boost", { exact: true });
+    const boostCard = boost.locator("../..");
+    const navigation = page.getByRole("navigation");
+    await expect(heating).toBeVisible();
+    await expect(boostCard.getByRole("button")).toHaveCount(2);
+    const navTop = (await navigation.boundingBox())?.y ?? 0;
+    for (const control of [heating, boostCard]) {
+      const bounds = await control.boundingBox();
+      expect(bounds?.y).toBeGreaterThanOrEqual(0);
+      expect(bounds ? bounds.y + bounds.height : Infinity).toBeLessThan(navTop);
+    }
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  });
+});
