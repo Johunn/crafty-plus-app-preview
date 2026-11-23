@@ -5,7 +5,7 @@
  *
  * Uses Playwright's Chromium; set CHROMIUM_PATH to use another Chromium.
  */
-import { readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "@playwright/test";
@@ -41,6 +41,10 @@ for (const [file, source, size] of outputs) {
   writeFileSync(join(publicDir, file), await render(source, size));
   console.log(`public/${file}`);
 }
+
+const androidIcon = "android/app/src/main/res/mipmap-nodpi/ic_launcher.png";
+copyFileSync(join(publicDir, "maskable-512x512.png"), join(root, androidIcon));
+console.log(androidIcon);
 
 // favicon.ico with embedded PNGs (supported by every current browser)
 const sizes = [16, 32, 48];
